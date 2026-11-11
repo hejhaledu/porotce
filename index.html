@@ -48,6 +48,8 @@ button,input,select{font-family:inherit;color:inherit}
 .ccard{display:block;width:100%;text-align:left;margin-top:10px;padding:14px 16px;border-radius:16px;border:1px solid var(--stroke);background:var(--glass);box-shadow:0 4px 16px rgba(0,0,0,.25)}
 .ccard b{display:block;font-size:17px;margin-bottom:4px}
 .ccard .m{font-size:13px;color:var(--text2);line-height:1.45}
+.ccard.other{opacity:.5;box-shadow:none;background:transparent}
+.ccard.other b{font-size:15px}
 .ccard.live{border-color:var(--accent);background:rgba(245,211,168,.1);box-shadow:0 0 0 1px rgba(245,211,168,.4),0 8px 30px rgba(245,211,168,.12)}
 .cbadge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:11px;font-size:12px;font-weight:600;margin-bottom:8px;background:rgba(255,255,255,.08);color:var(--text2)}
 .ccard.live .cbadge{background:var(--accent);color:var(--ink)}
@@ -103,8 +105,14 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:ma
 .fbtn .sm{position:absolute;top:4px;right:7px;font-size:12px;font-weight:700;color:var(--accent)}
 .fbtn:disabled{opacity:.5}
 .fin svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-.fin line{stroke:var(--accent);stroke-width:1.6;stroke-linecap:round;opacity:.85}
-.fin line.hl{stroke:var(--blue);stroke-width:2.4;opacity:1}
+.fin .ln{fill:none;stroke:url(#lnGrad);stroke-width:2.2;stroke-linecap:round}
+.fin .ln-glow{fill:none;stroke:rgba(245,211,168,.18);stroke-width:7;stroke-linecap:round}
+.fin .ln.hl{stroke:var(--blue);stroke-width:2.8}
+.fin .ln-glow.hl{stroke:rgba(91,140,255,.28)}
+.fin .end{fill:var(--accent);stroke:#05072b;stroke-width:2}
+.fin .end.hl{fill:var(--blue)}
+.fin svg .ln,.fin svg .ln-glow,.fin svg .end{animation:lnIn .25s ease-out}
+@keyframes lnIn{from{opacity:0}}
 footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));background:rgba(5,7,43,.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--stroke)}
 .frow{display:flex;gap:8px;align-items:center}
 .counter{font-size:20px;font-weight:700;min-width:62px;letter-spacing:-.01em}
@@ -229,7 +237,7 @@ let online = navigator.onLine, serverConnected = false;
 let selC = null, selP = null;            // finále: vybraný pár / místo
 const settings = () => DEFAULTS;
 let sim = null;                          // simulátor: { from: "home"|"live" }
-let liveRounds = new Map(), liveMe = {};
+let liveRounds = new Map(), liveMe = {}, allRounds = [];
 
 // ===================== HOMESCREEN A SEZNAM SOUTĚŽÍ =====================
 const compState = c => c.finishedAt ? "done" : c.startedAt ? "live" : "ready";
@@ -282,7 +290,12 @@ function renderList() {
         <b>${esc(c.name || c.id)}</b>
         <div class="m">Jste zapsán/a jako <b style="display:inline;font-size:13px">${judge}</b>${c.jury[judge] ? ` · ${esc(c.jury[judge])}` : ""}<br>${st === "live" ? `Zahájeno ${fmtD(c.startedAt)}` : `Založeno ${fmtD(c.createdAt)}`}</div></button>`;
     }).join("")
-    : `<div class="center">Pro porotce <b style="color:var(--text)">${judge}</b> teď není otevřená žádná soutěž.<br>Zkontrolujte písmeno, nebo se zeptejte sčitatele.</div>`;
+    : `<div class="center" style="padding:30px 10px">Pro porotce <b style="color:var(--text)">${judge}</b> teď není otevřená žádná soutěž.<br>Zkontrolujte písmeno, nebo se zeptejte sčitatele.</div>`;
+  const others = [...comps.values()].filter(c => compState(c) !== "done" && !juryLetters(c).includes(judge))
+    .sort((a, b) => order[compState(a)] - order[compState(b)] || (b.startedAt || b.createdAt || 0) - (a.startedAt || a.createdAt || 0));
+  if (compsLoaded && others.length) $("compList").innerHTML += `<div class="kicker" style="margin-top:28px">Ostatní soutěže</div>`
+    + others.map(c => `<div class="ccard other"><span class="cbadge">${compState(c) === "live" ? "Probíhá" : "Připravuje se"}</span>
+      <b>${esc(c.name || c.id)}</b><div class="m">Porota ${juryLetters(c).join(", ") || "–"} · porotce ${judge} zde nehodnotí</div></div>`).join("");
 }
 $("compList").onclick = e => { const b = e.target.closest("[data-comp]"); if (b) { comp = b.dataset.comp; start(); } };
 
@@ -335,7 +348,8 @@ function listen() {
   });
   onSnapshot(collection(db, "competitions", comp, "rounds"), { includeMetadataChanges: true }, snap => {
     serverConnected = !snap.metadata.fromCache; updateConn();
-    liveRounds = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }]).filter(([, r]) => r.judges?.includes(judge)));
+    allRounds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    liveRounds = new Map(allRounds.filter(r => r.judges?.includes(judge)).map(r => [r.id, r]));
     if (sim) return;
     rounds = liveRounds;
     const o = openRounds(), cur = rounds.get(rid);
@@ -390,7 +404,11 @@ function render() {
   if (!r) {
     $("tabs").classList.add("hidden"); $("footer").classList.add("hidden");
     $("hRound").textContent = "Čekám na kolo…";
-    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.
+    const others = sim ? [] : allRounds.filter(x => x.status === "open" && !x.judges?.includes(judge));
+    const info = sim ? "" : others.length
+      ? `<div style="margin-top:18px;font-size:13px;line-height:1.6">Právě probíhá:<br>${others.map(x => `<b style="color:var(--text)">${esc(titleOf(x))}</b> – hodnotí ${(x.judges || []).join(", ")}`).join("<br>")}<br>Porotce ${judge} v tomto kole není. Pokud to nesedí, ozvěte se sčitateli.</div>`
+      : `<div style="margin-top:18px;font-size:13px">Sčitatel zatím nespustil žádné kolo.</div>`;
+    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}
       <div style="margin-top:34px;font-size:13px">Mezitím si můžete vyzkoušet hodnocení v simulátoru:</div>
       <div class="simbtns" style="max-width:340px;margin:10px auto 0"><button class="btn" data-sim="prelim">1. kolo</button><button class="btn" data-sim="final">Finále</button></div></div>`;
     return;
@@ -424,7 +442,8 @@ function render() {
   if (r.type === "prelim") renderPrelim(r, dr, banner, locked, st); else renderFinal(r, dr, banner, locked, st);
 
   $("counter").textContent = r.type === "prelim" ? `${dr.marks.size}/${r.required}` : `${Object.keys(dr.assign).length}/${r.couples.length}`;
-  $("counter").style.color = isValid(r, dr) ? "#5fe08a" : "";
+  const cnt = r.type === "prelim" ? dr.marks.size : Object.keys(dr.assign).length, need = r.type === "prelim" ? r.required : r.couples.length;
+  $("counter").style.color = cnt === need ? "#5fe08a" : cnt > need ? "#ff6b6f" : "";
   const same = sameAsSheet(r, dr, s?.data);
   $("sendBtn").disabled = locked || !isValid(r, dr) || same;
   $("sendBtn").textContent = s ? "Odeslat opravu" : "Odeslat";
@@ -482,10 +501,16 @@ function drawLines() {
   const fin = $("fin"), svg = $("lines"); if (!fin || !svg) return;
   const r = rounds.get(rid); if (!r || r.type !== "final") return;
   const dr = draftFor(r, dance), box = fin.getBoundingClientRect();
-  svg.innerHTML = Object.entries(dr.assign).map(([c, p]) => {
+  const W = box.width;
+  const defs = `<defs><linearGradient id="lnGrad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${W}" y2="0">
+    <stop offset="0" stop-color="#f5d3a8"/><stop offset="1" stop-color="#ffe9cc"/></linearGradient></defs>`;
+  svg.innerHTML = defs + Object.entries(dr.assign).map(([c, p]) => {
     const a = fin.querySelector(`[data-fc="${c}"]`)?.getBoundingClientRect(), b = fin.querySelector(`[data-fp="${p}"]`)?.getBoundingClientRect();
     if (!a || !b) return "";
-    return `<line class="${selC === +c ? "hl" : ""}" x1="${a.right - box.left}" y1="${a.top + a.height / 2 - box.top}" x2="${b.left - box.left}" y2="${b.top + b.height / 2 - box.top}"/>`;
+    const x1 = a.right - box.left + 1, y1 = a.top + a.height / 2 - box.top, x2 = b.left - box.left - 1, y2 = b.top + b.height / 2 - box.top;
+    const k = (x2 - x1) * .5, d = `M${x1},${y1} C${x1 + k},${y1} ${x2 - k},${y2} ${x2},${y2}`;   // plynulá S-křivka
+    const hl = selC === +c ? "hl" : "";
+    return `<path class="ln-glow ${hl}" d="${d}"/><path class="ln ${hl}" d="${d}"/><circle class="end ${hl}" cx="${x1}" cy="${y1}" r="4"/><circle class="end ${hl}" cx="${x2}" cy="${y2}" r="4"/>`;
   }).join("");
 }
 addEventListener("resize", () => { const r = rounds.get(rid); if (r?.type === "final") { fitFinal(r.couples.length); requestAnimationFrame(drawLines); } else fitPrelim(); });
@@ -518,8 +543,7 @@ const endPtr = (e, cancel) => {
   if (Math.abs(dx) < 14 && Math.abs(dy) < 14) {
     const dr = draftFor(r, dance);
     if (dr.marks.has(c)) dr.marks.delete(c);
-    else if (dr.marks.size < r.required) dr.marks.add(c);
-    else { navigator.vibrate?.(80); flash(b); return; }
+    else { dr.marks.add(c); if (dr.marks.size > r.required) navigator.vibrate?.(60); }
     dr.dirty = true; render();
   }
 };
@@ -541,12 +565,6 @@ function link(r, c, p) {
   else {
     for (const [k, v] of Object.entries(dr.assign)) if (v === p) delete dr.assign[k];   // místo uvolnit
     dr.assign[c] = p;
-    const N = r.couples.length;
-    if (Object.keys(dr.assign).length === N - 1) {             // poslední pár doplnit automaticky
-      const freeC = r.couples.find(x => !dr.assign[x]);
-      const used = new Set(Object.values(dr.assign)); const freeP = Array.from({ length: N }, (_, i) => i + 1).find(x => !used.has(x));
-      dr.assign[freeC] = freeP;
-    }
   }
   dr.dirty = true; selC = selP = null; navigator.vibrate?.(15); render();
 }
