@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111318">
+<title>Artimo Counter – Porotce</title>
+<style>
+:root{--bg:#111318;--panel:#1a1d24;--panel2:#21252e;--line:#2c313b;--text:#e8eaf0;--muted:#8b92a3;--accent:#f59e0b;--ok:#22c55e;--wait:#f59e0b;--bad:#ef4444}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:16px;touch-action:manipulation;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid var(--line)}
+.judge-badge{width:44px;height:44px;border-radius:10px;background:var(--accent);color:#111;font-weight:900;font-size:24px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.who{flex:1;min-width:0}
+.who b{display:block;font-size:15px}
+.who span{font-size:12px;color:var(--muted)}
+.conn{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block;flex:0 0 auto}
+.dot.ok{background:var(--ok)}.dot.wait{background:var(--wait)}.dot.bad{background:var(--bad)}
+button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;cursor:pointer}
+select,input{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+.roundbar{padding:10px 14px;border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:6px;padding:10px 14px;overflow-x:auto;border-bottom:1px solid var(--line)}
+.tab{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:9px 12px;font-size:14px}
+.tab.sel{border-color:var(--accent);background:rgba(245,158,11,.12)}
+.content{flex:1;overflow-y:auto;padding:14px}
+.instr{font-size:14px;color:var(--muted);margin-bottom:12px}
+.instr b{color:var(--text)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:10px}
+.couple{position:relative;height:78px;font-size:28px;font-weight:800;border-radius:14px;display:flex;align-items:center;justify-content:center}
+.couple.on{background:var(--accent);border-color:var(--accent);color:#111}
+.couple .place{position:absolute;top:4px;right:6px;font-size:13px;font-weight:800;background:#111;color:var(--accent);border-radius:999px;padding:1px 7px}
+.couple:disabled{opacity:.55}
+footer{border-top:1px solid var(--line);padding:12px 14px;padding-bottom:max(12px,env(safe-area-inset-bottom));background:var(--bg)}
+.foot-row{display:flex;gap:10px;align-items:center}
+.counter{font-size:22px;font-weight:800;min-width:76px}
+.send{flex:1;padding:16px;font-size:18px;font-weight:800;background:var(--accent);border-color:var(--accent);color:#111;border-radius:12px}
+.send:disabled{background:var(--panel2);border-color:var(--line);color:var(--muted)}
+.status{margin-top:8px;font-size:14px;display:flex;align-items:center;gap:8px;min-height:20px}
+.banner{margin:0 0 12px;padding:10px 12px;border-radius:10px;font-size:14px}
+.banner.locked{background:rgba(239,68,68,.15);color:var(--bad)}
+.banner.info{background:var(--panel2);color:var(--muted)}
+.setup{max-width:420px;margin:40px auto;padding:20px}
+.setup h1{font-size:22px}
+.setup label{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px}
+.letters{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.letters button{font-size:20px;font-weight:800;padding:12px 0}
+.letters button.on{background:var(--accent);border-color:var(--accent);color:#111}
+.empty{text-align:center;color:var(--muted);padding:60px 20px;line-height:1.6}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- Nastavení porotce (když chybí v odkazu) -->
+<div id="setup" class="setup hidden">
+  <h1>Artimo Counter – porotce</h1>
+  <label>ID soutěže</label>
+  <input id="sComp" value="test" autocapitalize="off">
+  <label>Jsem porotce</label>
+  <div class="letters" id="sLetters"></div>
+  <button id="sGo" class="send" style="width:100%;margin-top:20px" disabled>Pokračovat</button>
+</div>
+
+<!-- Hlavní obrazovka -->
+<div id="appView" class="hidden" style="display:flex;flex-direction:column;height:100%">
+  <header>
+    <div class="judge-badge" id="hJudge">?</div>
+    <div class="who"><b id="hRound">Čekám na kolo…</b><span id="hComp"></span></div>
+    <div class="conn"><span class="dot" id="connDot"></span><span id="connText">…</span></div>
+  </header>
+  <div class="roundbar hidden" id="roundBar"><select id="roundSel"></select></div>
+  <div class="tabs hidden" id="tabs"></div>
+  <div class="content" id="content"></div>
+  <footer id="footer" class="hidden">
+    <div class="foot-row">
+      <div class="counter" id="counter"></div>
+      <button id="clearBtn">Smazat</button>
+      <button id="sendBtn" class="send">Odeslat</button>
+    </div>
+    <div class="status" id="status"></div>
+  </footer>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+         collection, doc, setDoc, onSnapshot, query, where, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDDyx-mv5Ugi-5xEkUtPnWjGl_RuyHOwDI",
+  authDomain: "artimo-counter.firebaseapp.com",
+  projectId: "artimo-counter",
+  storageBucket: "artimo-counter.firebasestorage.app",
+  messagingSenderId: "953081589311",
+  appId: "1:953081589311:web:787c967a46f3cc9c1d928a"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
+
+const DANCES = { W:"Waltz", T:"Tango", V:"Valčík", F:"Slowfox", Q:"Quickstep",
+                 S:"Samba", C:"Cha-cha", R:"Rumba", P:"Paso doble", J:"Jive" };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+                set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
+
+const params = new URLSearchParams(location.search);
+let comp = params.get("c") || store.get("ac_j_comp");
+let judge = (params.get("j") || store.get("ac_j_judge") || "").toUpperCase();
+
+let rounds = new Map();
+let rid = null, dance = null;
+let sheets = new Map();          // dance -> { data, pending }
+let drafts = new Map();          // `${rid}|${dance}` -> { marks:Set } | { order:[] }
+let unsubSheets = null;
+let online = navigator.onLine, serverConnected = false;
+
+// ---------- nastavení ----------
+function showSetup() {
+  $("setup").classList.remove("hidden");
+  $("appView").classList.add("hidden");
+  $("sComp").value = comp || "test";
+  let sel = judge;
+  const render = () => {
+    $("sLetters").innerHTML = "ABCDEFGHIJKLMNOPQRSTUVWX".split("").map(l =>
+      `<button data-l="${l}" class="${l === sel ? "on" : ""}">${l}</button>`).join("");
+    $("sGo").disabled = !sel;
+  };
+  $("sLetters").onclick = e => { if (e.target.dataset.l) { sel = e.target.dataset.l; render(); } };
+  $("sGo").onclick = () => {
+    comp = $("sComp").value.trim().toLowerCase(); judge = sel;
+    if (comp && judge) start();
+  };
+  render();
+}
+
+function start() {
+  store.set("ac_j_comp", comp); store.set("ac_j_judge", judge);
+  $("setup").classList.add("hidden");
+  $("appView").classList.remove("hidden");
+  $("hJudge").textContent = judge;
+  $("hComp").textContent = `Soutěž: ${comp}`;
+  $("hJudge").onclick = () => { if (confirm("Změnit porotce nebo soutěž?")) location.href = location.pathname; };
+  requestWakeLock();
+  onAuthStateChanged(auth, user => { if (user) listenRounds(); });
+  signInAnonymously(auth).catch(e => setConn("bad", "Přihlášení selhalo: " + e.code));
+}
+
+// ---------- připojení ----------
+function setConn(cls, text) { $("connDot").className = "dot " + cls; $("connText").textContent = text; }
+function updateConn() {
+  if (!online) setConn("bad", "Bez internetu");
+  else if (!serverConnected) setConn("wait", "Připojování");
+  else setConn("ok", "Online");
+}
+addEventListener("online", () => { online = true; updateConn(); });
+addEventListener("offline", () => { online = false; updateConn(); });
+
+let wakeLock = null;
+async function requestWakeLock() {
+  try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") requestWakeLock(); });
+
+// ---------- kola ----------
+let roundsListening = false;
+function listenRounds() {
+  if (roundsListening) return; roundsListening = true;
+  onSnapshot(collection(db, "competitions", comp, "rounds"), { includeMetadataChanges: true }, snap => {
+    serverConnected = !snap.metadata.fromCache; updateConn();
+    rounds = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }]).filter(([, r]) => r.judges?.includes(judge)));
+    if (!rid || !rounds.has(rid)) {
+      const open = [...rounds.values()].filter(r => r.status === "open").sort((a, b) => b.created - a.created);
+      if (open[0]) selectRound(open[0].id); else { rid = null; render(); }
+    } else render();
+  }, err => setConn("bad", "Chyba: " + err.code));
+}
+
+function selectRound(id) {
+  rid = id;
+  const r = rounds.get(id);
+  dance = r.dances[0];
+  sheets.clear();
+  unsubSheets?.();
+  unsubSheets = onSnapshot(
+    query(collection(db, "competitions", comp, "rounds", id, "sheets"), where("judge", "==", judge)),
+    { includeMetadataChanges: true },
+    snap => {
+      sheets = new Map(snap.docs.map(d => [d.data().dance, { data: d.data(), pending: d.metadata.hasPendingWrites }]));
+      render();
+    });
+  render();
+}
+
+$("roundSel").onchange = e => selectRound(e.target.value);
+
+// ---------- koncept lístku ----------
+function draftFor(r, d) {
+  const key = `${r.id}|${d}`;
+  // Dokud porotce nic neupravil, koncept se vždy načte z posledního odeslaného lístku
+  if (!drafts.has(key) || !drafts.get(key).dirty) {
+    const s = sheets.get(d)?.data;
+    drafts.set(key, r.type === "prelim"
+      ? { dirty: false, marks: new Set(s?.marks || []) }
+      : { dirty: false, order: s ? Object.entries(s.placings).sort((a, b) => a[1] - b[1]).map(([c]) => +c) : [] });
+  }
+  return drafts.get(key);
+}
+function draftEqualsSheet(r, dr, s) {
+  if (!s) return false;
+  if (r.type === "prelim") return s.marks.length === dr.marks.size && s.marks.every(m => dr.marks.has(m));
+  const o = Object.entries(s.placings).sort((a, b) => a[1] - b[1]).map(([c]) => +c);
+  return o.length === dr.order.length && o.every((c, i) => c === dr.order[i]);
+}
+function isValid(r, dr) {
+  return r.type === "prelim" ? dr.marks.size === r.required : dr.order.length === r.couples.length;
+}
+
+// ---------- vykreslení ----------
+function render() {
+  const r = rounds.get(rid);
+  const has = !!r;
+  $("roundBar").classList.toggle("hidden", rounds.size < 2);
+  $("tabs").classList.toggle("hidden", !has);
+  $("footer").classList.toggle("hidden", !has);
+  const sorted = [...rounds.values()].sort((a, b) => b.created - a.created);
+  $("roundSel").innerHTML = sorted.map(x => `<option value="${x.id}" ${x.id === rid ? "selected" : ""}>${esc(x.name)}${x.status === "locked" ? " (uzamčeno)" : ""}</option>`).join("");
+
+  if (!has) {
+    $("hRound").textContent = "Čekám na kolo…";
+    $("content").innerHTML = `<div class="empty">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel otevře, objeví se tu samo.</div>`;
+    return;
+  }
+  $("hRound").textContent = r.name;
+  const locked = r.status !== "open";
+
+  $("tabs").innerHTML = r.dances.map(d => {
+    const s = sheets.get(d);
+    const cls = !s ? "" : s.pending ? "wait" : "ok";
+    return `<button class="tab ${d === dance ? "sel" : ""}" data-d="${d}"><span class="dot ${cls}"></span>${DANCES[d]}</button>`;
+  }).join("");
+
+  const dr = draftFor(r, dance);
+  const s = sheets.get(dance);
+  const banner = locked ? `<div class="banner locked">Kolo je uzamčené sčitatelem – nelze odesílat ani měnit.</div>` : "";
+  const instr = r.type === "prelim"
+    ? `Označte <b>${r.required}</b> párů, které postupují. Ťuknutím označíte / zrušíte.`
+    : `Ťukejte na páry v pořadí od <b>1. místa</b>. Ťuknutím na umístěný pár ho odeberete.`;
+  $("content").innerHTML = banner + `<div class="instr">${instr}</div><div class="grid">` + r.couples.map(c => {
+    if (r.type === "prelim") return `<button class="couple ${dr.marks.has(c) ? "on" : ""}" data-c="${c}" ${locked ? "disabled" : ""}>${c}</button>`;
+    const p = dr.order.indexOf(c);
+    return `<button class="couple ${p >= 0 ? "on" : ""}" data-c="${c}" ${locked ? "disabled" : ""}>${c}${p >= 0 ? `<span class="place">${p + 1}.</span>` : ""}</button>`;
+  }).join("") + `</div>`;
+
+  $("counter").textContent = r.type === "prelim" ? `${dr.marks.size} / ${r.required}` : `${dr.order.length} / ${r.couples.length}`;
+  $("counter").style.color = isValid(r, dr) ? "var(--ok)" : "";
+  const same = draftEqualsSheet(r, dr, s?.data);
+  $("sendBtn").disabled = locked || !isValid(r, dr) || same;
+  $("sendBtn").textContent = s ? "Odeslat opravu" : "Odeslat";
+  $("clearBtn").disabled = locked;
+
+  let st;
+  if (!s) st = `<span class="dot"></span>Neodesláno`;
+  else if (!same) st = `<span class="dot wait"></span>Máte neodeslané změny`;
+  else if (s.pending) st = `<span class="dot wait"></span>⏳ Uloženo v telefonu, čeká na odeslání`;
+  else st = `<span class="dot ok"></span>✓ Přijato sčitatelem${s.data.rev > 1 ? ` (verze ${s.data.rev})` : ""}`;
+  $("status").innerHTML = st;
+}
+
+$("tabs").addEventListener("click", e => {
+  const t = e.target.closest("[data-d]"); if (t) { dance = t.dataset.d; render(); }
+});
+
+$("content").addEventListener("click", e => {
+  const b = e.target.closest("[data-c]"); if (!b || b.disabled) return;
+  const r = rounds.get(rid), dr = draftFor(r, dance), c = +b.dataset.c;
+  if (r.type === "prelim") {
+    if (dr.marks.has(c)) dr.marks.delete(c);
+    else if (dr.marks.size < r.required) dr.marks.add(c);
+    else { navigator.vibrate?.(80); return; }
+  } else {
+    const i = dr.order.indexOf(c);
+    if (i >= 0) dr.order.splice(i, 1); else dr.order.push(c);
+    // poslední zbývající pár doplnit automaticky
+    if (dr.order.length === r.couples.length - 1) dr.order.push(r.couples.find(x => !dr.order.includes(x)));
+  }
+  dr.dirty = true;
+  render();
+});
+
+$("clearBtn").onclick = () => {
+  const r = rounds.get(rid), dr = draftFor(r, dance);
+  if (r.type === "prelim") dr.marks.clear(); else dr.order.length = 0;
+  dr.dirty = true;
+  render();
+};
+
+$("sendBtn").onclick = () => {
+  const r = rounds.get(rid), dr = draftFor(r, dance);
+  if (r.status !== "open" || !isValid(r, dr)) return;
+  const prev = sheets.get(dance)?.data;
+  const data = {
+    judge, dance, type: r.type,
+    uid: auth.currentUser?.uid || null,
+    clientAt: Date.now(),
+    sentAt: serverTimestamp(),
+    rev: (prev?.rev || 0) + 1
+  };
+  if (r.type === "prelim") data.marks = [...dr.marks].sort((a, b) => a - b);
+  else data.placings = Object.fromEntries(dr.order.map((c, i) => [String(c), i + 1]));
+
+  // Neblokujeme – zápis jde do lokální fronty a odešle se, jakmile bude spojení.
+  setDoc(doc(db, "competitions", comp, "rounds", rid, "sheets", `${dance}_${judge}`), data)
+    .catch(e => { $("status").innerHTML = `<span class="dot bad"></span>Chyba: ${esc(e.code || e.message)}`; });
+  dr.dirty = false;
+  navigator.vibrate?.(30);
+
+  // přejít na další neodeslaný tanec
+  const next = r.dances.find(d => d !== dance && !sheets.has(d));
+  if (next) setTimeout(() => { dance = next; render(); }, 350);
+};
+
+// ---------- start ----------
+if (comp && judge) start(); else showSetup();
+</script>
+</body>
+</html>
