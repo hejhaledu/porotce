@@ -20,6 +20,24 @@ html,body{margin:0;height:100%;overflow:hidden}
 body{font-family:var(--font);font-size:15px;color:var(--text);background:radial-gradient(900px 500px at 0% -10%,#111766 0%,transparent 60%),var(--bg);-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;touch-action:manipulation}
 button,input,select{font-family:inherit;color:inherit}
 .hidden{display:none!important}
+*{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.14) transparent}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:6px}
+.hlogo{height:26px;width:auto;flex:0 0 auto;opacity:.95}
+.biglogo{height:64px;width:auto;display:block;margin:0 0 16px}
+.scol{display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex:0 0 auto}
+.srow{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);line-height:1}
+.srow.ready{color:#5fe08a}
+.medal{position:absolute;top:6px;left:7px;width:13px;height:13px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.4)}
+.medal.m1{background:radial-gradient(circle at 35% 30%,#fff3c4,#f2c14e 55%,#c89211)}
+.medal.m2{background:radial-gradient(circle at 35% 30%,#ffffff,#cfd3dd 55%,#8f95a5)}
+.medal.m3{background:radial-gradient(circle at 35% 30%,#ffe0c7,#d9925e 55%,#9c5a2c)}
+.simbar{display:flex;align-items:center;gap:8px;margin:4px 0 10px;padding:8px 10px;border-radius:11px;background:rgba(91,140,255,.16);border:1px solid rgba(91,140,255,.35);font-size:13px}
+.simbar b{color:#9db8ff}
+.simbar .btn{height:28px;font-size:12px;padding:0 10px;border-radius:8px;margin-left:auto}
+.simbtns{display:flex;gap:8px;margin-top:10px}
+.simbtns .btn{flex:1;height:44px;font-size:14px}
 .btn{height:40px;padding:0 16px;border-radius:11px;border:none;background:var(--glass2);font-size:15px;font-weight:600;cursor:pointer;transition:background .15s,transform .1s,opacity .15s}
 .btn:active:not(:disabled){transform:scale(.97)}
 .btn:disabled{opacity:.4}
@@ -37,7 +55,6 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:ma
 .who{flex:1;min-width:0}
 .who b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .who span{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-.conn{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)}
 .bar{padding:8px 14px 0}
 .tabs{display:flex;gap:6px;padding:8px 14px;overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
@@ -52,7 +69,7 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:ma
 .ghead::after{content:"";flex:1;height:1px;background:var(--stroke2)}
 .ghead .gc{color:var(--accent)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px}
-.couple{position:relative;height:66px;border-radius:14px;border:1px solid var(--stroke);background:var(--glass);font-size:25px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:pan-y;transition:background .12s,color .12s,transform .12s;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.couple{position:relative;height:var(--ch,66px);border-radius:14px;border:1px solid var(--stroke);background:var(--glass);font-size:calc(var(--ch,66px) * .38);font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:pan-y;transition:background .12s,color .12s,transform .12s;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .couple.on{background:var(--accent);border-color:var(--accent);color:var(--ink)}
 .couple::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:transparent}
 .couple.mg::after{background:var(--green)}
@@ -110,6 +127,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
 </script>
 
 <div id="setup" class="setup hidden">
+  <img class="biglogo" src="data:image/png;base64,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" alt="Artimo">
   <h1>Artimo Counter</h1>
   <div style="color:var(--text2);font-size:14px">Aplikace porotce</div>
   <label>ID soutěže</label>
@@ -117,13 +135,17 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <label>Jsem porotce</label>
   <div class="letters" id="sLetters"></div>
   <button id="sGo" class="btn primary" style="width:100%;height:52px;margin-top:22px" disabled>Pokračovat</button>
+  <label style="margin-top:30px">Simulátor – vyzkoušejte si hodnocení bez odesílání</label>
+  <div class="simbtns"><button class="btn" data-sim="prelim">1. kolo</button><button class="btn" data-sim="final">Finále</button></div>
 </div>
 
 <div id="app" class="hidden">
   <header>
+    <img class="hlogo" src="data:image/png;base64,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" alt="Artimo">
     <div class="jbadge" id="hJudge">?</div>
     <div class="who"><b id="hRound">Čekám na kolo…</b><span id="hSub"></span></div>
-    <div class="conn"><span class="dot" id="connDot"></span><span id="connText">…</span></div>
+    <div class="scol"><div class="srow"><span class="dot" id="connDot"></span><span id="connText">…</span></div>
+      <div class="srow ready hidden" id="readyRow"><span class="dot ok"></span>Připraven</div></div>
   </header>
   <div class="bar hidden" id="roundBar"><select class="in" id="roundSel" style="height:38px;font-size:14px"></select></div>
   <div class="tabs hidden" id="tabs"></div>
@@ -162,7 +184,7 @@ catch { bootError("Offline úložiště není dostupné, aplikace poběží bez 
 
 const DANCES = { W:"Waltz", T:"Tango", V:"Valčík", F:"Slowfox", Q:"Quickstep",
                  S:"Samba", C:"Cha-cha", R:"Rumba", P:"Paso doble", J:"Jive", K:"Polka" };
-const DEFAULTS = { hints: true, requireReady: true, qr: true, colorMarks: true, autoNext: true };
+const DEFAULTS = { requireReady: true, qr: true, colorMarks: true, autoNext: true };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
@@ -180,7 +202,9 @@ const drafts = new Map();
 let unsubSheets = null;
 let online = navigator.onLine, serverConnected = false;
 let selC = null, selP = null;            // finále: vybraný pár / místo
-const settings = () => ({ ...DEFAULTS, ...(compDoc.settings || {}) });
+const settings = () => DEFAULTS;
+let sim = null;                          // simulátor: { from: "setup"|"live" }
+let liveRounds = new Map(), liveMe = {};
 
 // ===================== NASTAVENÍ POROTCE =====================
 function showSetup() {
@@ -211,7 +235,7 @@ function start() {
 }
 
 // ===================== PŘIPOJENÍ, PŘÍTOMNOST =====================
-function setConn(cls, text) { $("connDot").className = "dot " + cls; $("connText").textContent = text; }
+function setConn(cls, text) { if (sim) { cls = "wait"; text = "Simulátor"; } $("connDot").className = "dot " + cls; $("connText").textContent = text; }
 function updateConn() { if (!online) setConn("bad", "Offline"); else if (!serverConnected) setConn("wait", "Připojování"); else setConn("ok", "Online"); }
 addEventListener("online", () => { online = true; updateConn(); });
 addEventListener("offline", () => { online = false; updateConn(); });
@@ -226,16 +250,18 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 
 function listen() {
   beat(); setInterval(beat, 45000);
-  onSnapshot(judgeRef(), snap => { me = snap.data() || {}; render(); });
+  onSnapshot(judgeRef(), snap => { liveMe = snap.data() || {}; if (!sim) { me = liveMe; render(); } });
   onSnapshot(doc(db, "competitions", comp), snap => {
     compDoc = snap.data() || {};
     const name = compDoc.jury?.[judge];
-    $("hSub").textContent = [name, compDoc.name || comp].filter(Boolean).join(" · ");
+    if (!sim) $("hSub").textContent = [name, compDoc.name || comp].filter(Boolean).join(" · ");
     render();
   });
   onSnapshot(collection(db, "competitions", comp, "rounds"), { includeMetadataChanges: true }, snap => {
     serverConnected = !snap.metadata.fromCache; updateConn();
-    rounds = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }]).filter(([, r]) => r.judges?.includes(judge)));
+    liveRounds = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }]).filter(([, r]) => r.judges?.includes(judge)));
+    if (sim) return;
+    rounds = liveRounds;
     const o = openRounds(), cur = rounds.get(rid);
     if ((!cur || cur.status !== "open") && o[0]) selectRound(o[0].id);
     else { if (!cur) rid = null; render(); }
@@ -245,10 +271,11 @@ const openRounds = () => [...rounds.values()].filter(r => r.status === "open").s
 
 function selectRound(id) {
   rid = id; const r = rounds.get(id); dance = r.dances[0]; selC = selP = null;
-  sheets.clear(); unsubSheets?.();
+  sheets.clear(); unsubSheets?.(); unsubSheets = null;
+  if (sim) { render(); return; }
   unsubSheets = onSnapshot(query(collection(db, "competitions", comp, "rounds", id, "sheets"), where("judge", "==", judge)),
     { includeMetadataChanges: true },
-    snap => { sheets = new Map(snap.docs.map(d => [d.data().dance, { data: d.data(), pending: d.metadata.hasPendingWrites }])); render(); });
+    snap => { if (sim) return; sheets = new Map(snap.docs.map(d => [d.data().dance, { data: d.data(), pending: d.metadata.hasPendingWrites }])); render(); });
   render();
 }
 $("roundSel").onchange = e => selectRound(e.target.value);
@@ -272,7 +299,7 @@ function sameAsSheet(r, dr, s) {
   return a === b;
 }
 // barevné značky (jen v telefonu porotce)
-const markKey = () => `ac_mk_${comp}_${rid}_${dance}`;
+const markKey = () => `ac_mk_${sim ? "sim" : comp}_${rid}_${dance}`;
 const getMarks = () => { try { return JSON.parse(store.get(markKey()) || "{}"); } catch { return {}; } };
 const setMarks = m => store.set(markKey(), JSON.stringify(m));
 
@@ -283,11 +310,13 @@ function render() {
   const list = [...rounds.values()].sort((a, b) => (b.created || 0) - (a.created || 0));
   $("roundBar").classList.toggle("hidden", openRounds().length < 2);
   $("roundSel").innerHTML = list.filter(x => x.status === "open" || x.id === rid).map(x => `<option value="${x.id}" ${x.id === rid ? "selected" : ""}>${esc(titleOf(x))}${x.status !== "open" ? " (uzavřeno)" : ""}</option>`).join("");
-  const showMain = !!r;
+  $("readyRow").classList.toggle("hidden", !(r && r.status === "open" && me.readyFor === r.id));
   if (!r) {
     $("tabs").classList.add("hidden"); $("footer").classList.add("hidden");
     $("hRound").textContent = "Čekám na kolo…";
-    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.</div>`;
+    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.
+      <div style="margin-top:34px;font-size:13px">Mezitím si můžete vyzkoušet hodnocení v simulátoru:</div>
+      <div class="simbtns" style="max-width:340px;margin:10px auto 0"><button class="btn" data-sim="prelim">1. kolo</button><button class="btn" data-sim="final">Finále</button></div></div>`;
     return;
   }
   $("hRound").textContent = titleOf(r);
@@ -295,13 +324,13 @@ function render() {
 
   if (!locked && st.requireReady && me.readyFor !== r.id) {
     $("tabs").classList.add("hidden"); $("footer").classList.add("hidden");
-    $("content").innerHTML = `<div class="center"><h2>${esc(titleOf(r))}</h2>
+    $("content").innerHTML = (sim ? `<div class="simbar"><b>Simulátor</b> nic se neodesílá<button class="btn" data-simexit="1">Ukončit</button></div>` : "") + `<div class="center"><h2>${esc(titleOf(r))}</h2>
       ${r.type === "final" ? "Finále – určíte pořadí párů" : `Postupové kolo – označíte ${r.required} párů`}<br>
       ${r.dances.map(d => DANCES[d]).join(", ")} · ${pary(r.couples.length)}${r.groups?.length > 1 ? ` · ${r.groups.length} skupiny` : ""}
       <button class="btn primary" id="readyBtn">Jsem připraven/a</button></div>`;
     $("readyBtn").onclick = () => {
       me = { ...me, readyFor: r.id };
-      setDoc(judgeRef(), { readyFor: r.id, readyAt: serverTimestamp(), lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
+      if (!sim) setDoc(judgeRef(), { readyFor: r.id, readyAt: serverTimestamp(), lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
       navigator.vibrate?.(30); render();
     };
     return;
@@ -314,8 +343,8 @@ function render() {
   }).join("");
 
   const dr = draftFor(r, dance), s = sheets.get(dance);
-  const banner = locked ? `<div class="banner locked">Kolo je uzavřené sčitatelem – nelze odesílat ani měnit.</div>`
-    : st.requireReady ? `<div class="readyok"><span class="dot ok"></span>Připraven/a – sčitatel vás vidí</div>` : "";
+  const banner = (sim ? `<div class="simbar"><b>Simulátor</b> nic se neodesílá<button class="btn" data-simexit="1">Ukončit</button></div>` : "")
+    + (locked ? `<div class="banner locked">Kolo je uzavřené sčitatelem – nelze odesílat ani měnit.</div>` : "");
   if (r.type === "prelim") renderPrelim(r, dr, banner, locked, st); else renderFinal(r, dr, banner, locked, st);
 
   $("counter").textContent = r.type === "prelim" ? `${dr.marks.size}/${r.required}` : `${Object.keys(dr.assign).length}/${r.couples.length}`;
@@ -339,20 +368,39 @@ function renderPrelim(r, dr, banner, locked, st) {
   const groups = r.groups?.length ? r.groups : [{ n: 1, couples: r.couples }];
   const btn = c => `<button class="couple ${dr.marks.has(c) ? "on" : ""} ${marks[c] === "g" ? "mg" : marks[c] === "r" ? "mr" : ""}" data-c="${c}" ${locked ? "disabled" : ""}>${c}</button>`;
   $("content").innerHTML = banner +
-    (st.hints ? `<div class="instr">Ťuknutím označte <b>${r.required} párů</b>, které postupují.${st.colorMarks ? " Posunutím prstu po páru <b>doprava</b> si ho označíte zeleně, <b>doleva</b> červeně (jen pro vás)." : ""}</div>` : "") +
     groups.map(g => `${groups.length > 1 ? `<div class="ghead"><span class="gc">${g.n}. skupina</span> ${g.couples.length}</div>` : ""}<div class="grid">${g.couples.map(btn).join("")}</div>`).join("");
+  fitPrelim();
+}
+// Tlačítka párů se zvětší/zmenší, aby se vešla na obrazovku; pod pohodlné minimum (44 px) nejdou – pak se posouvá.
+function fitPrelim() {
+  const el = $("content"), grids = [...el.querySelectorAll(".grid")]; if (!grids.length) return;
+  const cols = getComputedStyle(grids[0]).gridTemplateColumns.split(" ").length || 4;
+  let rows = 0, gaps = 0;
+  grids.forEach(g => { const n = Math.ceil(g.children.length / cols); rows += n; gaps += (n - 1) * 8; });
+  let fixed = 0;
+  [...el.children].filter(c => !c.classList.contains("grid")).forEach(c => { const cs = getComputedStyle(c); fixed += c.offsetHeight + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom); });
+  const cs = getComputedStyle(el), avail = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - fixed - gaps - 2;
+  const h = Math.max(44, Math.min(78, Math.floor(avail / rows)));
+  el.style.setProperty("--ch", h + "px");
 }
 
 function renderFinal(r, dr, banner, locked, st) {
   const N = r.couples.length, byPlace = {};
   for (const [c, p] of Object.entries(dr.assign)) byPlace[p] = +c;
+  const medal = p => p >= 1 && p <= 3 ? `<span class="medal m${p}"></span>` : "";
   $("content").innerHTML = banner +
-    (st.hints ? `<div class="instr">Ťukněte na <b>pár</b> vlevo a pak na jeho <b>umístění</b> vpravo. Změnu provedete stejně – původní spojení zanikne.</div>` : "") +
-    `<div class="fin" id="fin" style="height:calc(100% - ${(banner ? 40 : 0) + (st.hints ? 46 : 0)}px)">
-      <div class="fcol" style="grid-template-rows:repeat(${N},1fr)">${r.couples.map(c => `<button class="fbtn ${dr.assign[c] ? "linked" : ""} ${selC === c ? "sel" : ""}" data-fc="${c}" ${locked ? "disabled" : ""}>${c}${dr.assign[c] ? `<span class="sm">${dr.assign[c]}.</span>` : ""}</button>`).join("")}</div>
-      <div class="fcol" style="grid-template-rows:repeat(${N},1fr)">${Array.from({ length: N }, (_, i) => i + 1).map(p => `<button class="fbtn pl ${byPlace[p] ? "linked" : ""} ${selP === p ? "sel" : ""}" data-fp="${p}" ${locked ? "disabled" : ""}>${p}.</button>`).join("")}</div>
+    `<div class="fin" id="fin">
+      <div class="fcol" style="grid-template-rows:repeat(${N},1fr)">${r.couples.map(c => `<button class="fbtn ${dr.assign[c] ? "linked" : ""} ${selC === c ? "sel" : ""}" data-fc="${c}" ${locked ? "disabled" : ""}>${medal(dr.assign[c])}${c}${dr.assign[c] ? `<span class="sm">${dr.assign[c]}.</span>` : ""}</button>`).join("")}</div>
+      <div class="fcol" style="grid-template-rows:repeat(${N},1fr)">${Array.from({ length: N }, (_, i) => i + 1).map(p => `<button class="fbtn pl ${byPlace[p] ? "linked" : ""} ${selP === p ? "sel" : ""}" data-fp="${p}" ${locked ? "disabled" : ""}>${medal(p)}${p}.</button>`).join("")}</div>
       <svg id="lines"></svg></div>`;
+  fitFinal(N);
   requestAnimationFrame(drawLines);
+}
+function fitFinal(N) {
+  const el = $("content"), fin = $("fin"); if (!fin) return;
+  let fixed = 0; [...el.children].filter(c => c !== fin).forEach(c => { const cs = getComputedStyle(c); fixed += c.offsetHeight + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom); });
+  const cs = getComputedStyle(el), avail = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - fixed - 2;
+  fin.style.height = Math.max(avail, N * 44 + (N - 1) * 8) + "px";
 }
 function drawLines() {
   const fin = $("fin"), svg = $("lines"); if (!fin || !svg) return;
@@ -364,7 +412,7 @@ function drawLines() {
     return `<line class="${selC === +c ? "hl" : ""}" x1="${a.right - box.left}" y1="${a.top + a.height / 2 - box.top}" x2="${b.left - box.left}" y2="${b.top + b.height / 2 - box.top}"/>`;
   }).join("");
 }
-addEventListener("resize", () => requestAnimationFrame(drawLines));
+addEventListener("resize", () => { const r = rounds.get(rid); if (r?.type === "final") { fitFinal(r.couples.length); requestAnimationFrame(drawLines); } else fitPrelim(); });
 
 // ===================== OVLÁDÁNÍ =====================
 $("tabs").addEventListener("click", e => { const t = e.target.closest("[data-d]"); if (t) { dance = t.dataset.d; selC = selP = null; render(); } });
@@ -440,7 +488,10 @@ $("sendBtn").onclick = () => {
   const data = { judge, dance, type: r.type, uid: auth.currentUser?.uid || null, clientAt: Date.now(), sentAt: serverTimestamp(), source: "app", rev: (prev?.rev || 0) + 1 };
   if (r.type === "prelim") data.marks = [...dr.marks].sort((a, b) => a - b);
   else data.placings = Object.fromEntries(Object.entries(dr.assign).map(([c, p]) => [String(c), p]));
-  setDoc(doc(db, "competitions", comp, "rounds", rid, "sheets", `${dance}_${judge}`), data)
+  if (sim) {
+    const d0 = dance; sheets.set(d0, { data, pending: true });
+    setTimeout(() => { const x = sheets.get(d0); if (x) x.pending = false; render(); }, 700);
+  } else setDoc(doc(db, "competitions", comp, "rounds", rid, "sheets", `${dance}_${judge}`), data)
     .catch(e => { $("status").innerHTML = `<span class="dot bad"></span> Chyba: ${esc(e.code || e.message)}`; });
   dr.dirty = false; navigator.vibrate?.(30);
   if (settings().autoNext) {
@@ -452,7 +503,7 @@ $("sendBtn").onclick = () => {
 // ===================== QR OFFLINE =====================
 // AC2;c=<soutěž>;r=<kolo>;j=<porotce>;t=p|f;ts=<ms>;S=1.4.7;C=...
 function qrPayload(r) {
-  const parts = ["AC2", `c=${comp}`, `r=${r.id}`, `j=${judge}`, `t=${r.type === "final" ? "f" : "p"}`, `ts=${Date.now()}`];
+  const parts = ["AC2", `c=${sim ? "simulace" : comp}`, `r=${r.id}`, `j=${judge}`, `t=${r.type === "final" ? "f" : "p"}`, `ts=${Date.now()}`];
   for (const d of r.dances) {
     const dr = draftFor(r, d), s = sheets.get(d)?.data;
     let nums = null;
@@ -480,6 +531,39 @@ $("qrBtn").onclick = () => {
     ${inner}<button class="btn primary" style="width:100%;margin-top:14px;height:46px" id="qrClose">Zavřít</button></div></div>`;
   $("qrClose").onclick = () => $("overlay").innerHTML = "";
 };
+
+// ===================== SIMULÁTOR =====================
+function simRound(kind) {
+  if (kind === "final") return { id: "sim-final", category: "Simulátor", label: "Finále", type: "final", dances: ["S","C","R","P","J"],
+    couples: [12, 17, 23, 31, 40, 45], judges: [judge], required: null, status: "open", created: Date.now() };
+  const couples = Array.from({ length: 24 }, (_, i) => i + 1);
+  return { id: "sim-prelim", category: "Simulátor", label: "1. kolo", type: "prelim", dances: ["S","C","R"], couples, judges: [judge], required: 12,
+    groups: [{ n: 1, couples: couples.slice(0, 8) }, { n: 2, couples: couples.slice(8, 16) }, { n: 3, couples: couples.slice(16) }], status: "open", created: Date.now() };
+}
+function startSim(kind) {
+  const from = $("app").classList.contains("hidden") ? "setup" : "live";
+  if (!judge) judge = "A";
+  sim = { from };
+  $("boot").style.display = "none"; $("setup").classList.add("hidden"); $("app").classList.remove("hidden");
+  $("hJudge").textContent = judge; $("hSub").textContent = "Zkušební kolo – nic se neodesílá";
+  setConn("wait", "Simulátor");
+  const r = simRound(kind);
+  rounds = new Map([[r.id, r]]); me = { ...me, readyFor: null };
+  for (const k of [...drafts.keys()]) if (k.startsWith("sim-")) drafts.delete(k);
+  try { for (const d of r.dances) localStorage.removeItem(`ac_mk_sim_${r.id}_${d}`); } catch {}
+  selectRound(r.id);
+}
+function exitSim() {
+  const from = sim?.from; sim = null; sheets.clear(); rid = null; selC = selP = null;
+  if (from === "setup") { judge = (params.get("j") || store.get("ac_j_judge") || "").toUpperCase(); showSetup(); return; }
+  me = liveMe; rounds = liveRounds; updateConn();
+  $("hSub").textContent = [compDoc.jury?.[judge], compDoc.name || comp].filter(Boolean).join(" · ");
+  const o = openRounds(); if (o[0]) selectRound(o[0].id); else render();
+}
+document.addEventListener("click", e => {
+  const s = e.target.closest("[data-sim]"); if (s) { startSim(s.dataset.sim); return; }
+  if (e.target.closest("[data-simexit]")) exitSim();
+});
 
 // ===================== START =====================
 if (comp && judge) start(); else showSetup();
