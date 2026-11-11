@@ -37,6 +37,23 @@ button,input,select{font-family:inherit;color:inherit}
 .simbar b{color:#9db8ff}
 .simbar .btn{height:28px;font-size:12px;padding:0 10px;border-radius:8px;margin-left:auto}
 .simbtns{display:flex;gap:8px;margin-top:10px}
+.kicker{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.home h1{font-size:26px;margin:4px 0 2px;letter-spacing:-.01em;line-height:1.2}
+.home .sub{color:var(--text2);font-size:14px;min-height:18px}
+.letters.named{grid-template-columns:repeat(2,1fr)}
+.letters.named button{height:56px;display:flex;align-items:center;gap:10px;padding:0 12px;text-align:left;font-size:14px;font-weight:600}
+.letters.named button i{font-style:normal;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.1);display:inline-flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex:0 0 auto}
+.letters.named button.on i{background:rgba(5,7,43,.18)}
+.letters.named button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccard{display:block;width:100%;text-align:left;margin-top:10px;padding:14px 16px;border-radius:16px;border:1px solid var(--stroke);background:var(--glass);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.ccard b{display:block;font-size:17px;margin-bottom:4px}
+.ccard .m{font-size:13px;color:var(--text2);line-height:1.45}
+.ccard.live{border-color:var(--accent);background:rgba(245,211,168,.1);box-shadow:0 0 0 1px rgba(245,211,168,.4),0 8px 30px rgba(245,211,168,.12)}
+.cbadge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:11px;font-size:12px;font-weight:600;margin-bottom:8px;background:rgba(255,255,255,.08);color:var(--text2)}
+.ccard.live .cbadge{background:var(--accent);color:var(--ink)}
+.ccard.live .cbadge .dot{background:var(--ink);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.backbtn{height:34px;padding:0 12px;border-radius:10px;border:none;background:var(--glass2);font-size:14px;font-weight:600}
 .simbtns .btn{flex:1;height:44px;font-size:14px}
 .btn{height:40px;padding:0 16px;border-radius:11px;border:none;background:var(--glass2);font-size:15px;font-weight:600;cursor:pointer;transition:background .15s,transform .1s,opacity .15s}
 .btn:active:not(:disabled){transform:scale(.97)}
@@ -126,17 +143,23 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   setTimeout(function(){ var b=document.getElementById("boot"); if (b && b.style.display !== "none") bootError("Aplikace se nenačetla do 8 s. Zkontrolujte internet a že je stránka otevřená přes https:// v Safari nebo Chrome."); }, 8000);
 </script>
 
-<div id="setup" class="setup hidden">
+<div id="home" class="setup home hidden">
   <img class="biglogo" src="data:image/png;base64,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" alt="Artimo">
-  <h1>Artimo Counter</h1>
-  <div style="color:var(--text2);font-size:14px">Aplikace porotce</div>
-  <label>ID soutěže</label>
-  <input class="in" id="sComp" autocapitalize="off" autocomplete="off">
+  <div class="kicker">Artimo Counter · porotce</div>
+  <h1 id="homeTitle">Načítám soutěže…</h1>
+  <div class="sub" id="homeSub"></div>
   <label>Jsem porotce</label>
-  <div class="letters" id="sLetters"></div>
-  <button id="sGo" class="btn primary" style="width:100%;height:52px;margin-top:22px" disabled>Pokračovat</button>
+  <div class="letters" id="hLetters"></div>
+  <button id="hGo" class="btn primary" style="width:100%;height:52px;margin-top:22px" disabled>Pokračovat</button>
   <label style="margin-top:30px">Simulátor – vyzkoušejte si hodnocení bez odesílání</label>
   <div class="simbtns"><button class="btn" data-sim="prelim">1. kolo</button><button class="btn" data-sim="final">Finále</button></div>
+</div>
+
+<div id="list" class="setup home hidden">
+  <button class="backbtn" id="lBack">‹ Zpět</button>
+  <div class="kicker" style="margin-top:18px">Porotce <span id="lJ"></span></div>
+  <h1>Vaše soutěže</h1>
+  <div id="compList"></div>
 </div>
 
 <div id="app" class="hidden">
@@ -192,7 +215,9 @@ const pary = n => `${n} ${n === 1 ? "pár" : n >= 2 && n <= 4 ? "páry" : "pár�
 const titleOf = r => r.category ? `${r.category} · ${r.label}` : (r.name || "");
 
 const params = new URLSearchParams(location.search);
-let comp = (params.get("c") || store.get("ac_j_comp") || "").toLowerCase();
+let comp = (params.get("c") || "").toLowerCase();       // soutěž z odkazu (jen pro zvýraznění)
+const linkComp = comp;
+let comps = new Map(), screen = "home";
 let judge = (params.get("j") || store.get("ac_j_judge") || "").toUpperCase();
 
 let compDoc = {}, me = {};
@@ -203,35 +228,86 @@ let unsubSheets = null;
 let online = navigator.onLine, serverConnected = false;
 let selC = null, selP = null;            // finále: vybraný pár / místo
 const settings = () => DEFAULTS;
-let sim = null;                          // simulátor: { from: "setup"|"live" }
+let sim = null;                          // simulátor: { from: "home"|"live" }
 let liveRounds = new Map(), liveMe = {};
 
-// ===================== NASTAVENÍ POROTCE =====================
-function showSetup() {
+// ===================== HOMESCREEN A SEZNAM SOUTĚŽÍ =====================
+const compState = c => c.finishedAt ? "done" : c.startedAt ? "live" : "ready";
+const juryLetters = c => Object.keys(c?.jury || {}).sort();
+// soutěž pro titulek homescreenu: z odkazu, jinak právě probíhající
+function featuredComp() {
+  if (linkComp && comps.has(linkComp)) return comps.get(linkComp);
+  const live = [...comps.values()].filter(c => compState(c) === "live");
+  return live.length === 1 ? live[0] : null;           // při více probíhajících soutěžích žádnou nevnucovat
+}
+function showScreen(name) {
+  screen = name;
   $("boot").style.display = "none";
-  $("setup").classList.remove("hidden"); $("app").classList.add("hidden");
-  $("sComp").value = comp;
-  let sel = judge;
-  const render = () => {
-    $("sLetters").innerHTML = "ABCDEFGHIJKLMNOPQRSTUVWX".split("").map(l => `<button data-l="${l}" class="${l === sel ? "on" : ""}">${l}</button>`).join("");
-    $("sGo").disabled = !sel || !$("sComp").value.trim();
-  };
-  $("sComp").oninput = render;
-  $("sLetters").onclick = e => { if (e.target.dataset.l) { sel = e.target.dataset.l; render(); } };
-  $("sGo").onclick = () => { comp = $("sComp").value.trim().toLowerCase(); judge = sel; if (comp && judge) start(); };
-  render();
+  $("home").classList.toggle("hidden", name !== "home");
+  $("list").classList.toggle("hidden", name !== "list");
+  $("app").classList.toggle("hidden", name !== "app");
+}
+function showHome() { showScreen("home"); renderHome(); }
+function renderHome() {
+  const f = featuredComp(), loaded = compsLoaded;
+  const liveN = [...comps.values()].filter(c => compState(c) === "live").length;
+  $("homeTitle").textContent = f ? (f.name || f.id) : loaded ? "Artimo Counter" : "Načítám soutěže…";
+  $("homeSub").textContent = f ? (compState(f) === "live" ? "Soutěž právě probíhá" : compState(f) === "ready" ? "Soutěž se připravuje" : "Soutěž je ukončená")
+    : loaded ? (liveN > 1 ? `Právě probíhají ${liveN} soutěže – vyberte své písmeno` : "Vyberte své písmeno porotce") : "";
+  const named = f && juryLetters(f).length && !allLetters;
+  const letters = named ? juryLetters(f) : "ABCDEFGHIJKLMNOPQRSTUVWX".split("");
+  $("hLetters").className = "letters" + (named ? " named" : "");
+  $("hLetters").innerHTML = letters.map(l => named
+    ? `<button data-l="${l}" class="${l === judge ? "on" : ""}"><i>${l}</i><span>${esc(f.jury[l] || "Porotce " + l)}</span></button>`
+    : `<button data-l="${l}" class="${l === judge ? "on" : ""}">${l}</button>`).join("")
+    + (named ? `<button data-all="1" style="grid-column:1/-1;height:40px;justify-content:center;color:var(--text2)">Jiné písmeno…</button>` : "");
+  $("hGo").disabled = !judge;
+}
+let allLetters = false;
+$("hLetters").onclick = e => { if (e.target.closest("[data-all]")) { allLetters = true; renderHome(); return; } const b = e.target.closest("[data-l]"); if (b) { judge = b.dataset.l; renderHome(); } };
+$("hGo").onclick = () => { if (!judge) return; store.set("ac_j_judge", judge); showScreen("list"); renderList(); };
+$("lBack").onclick = () => showHome();
+
+function renderList() {
+  $("lJ").textContent = judge;
+  const mine = [...comps.values()].filter(c => compState(c) !== "done" && juryLetters(c).includes(judge));
+  const order = { live: 0, ready: 1 };
+  mine.sort((a, b) => order[compState(a)] - order[compState(b)] || (b.startedAt || b.createdAt || 0) - (a.startedAt || a.createdAt || 0));
+  const fmtD = ms => ms ? new Date(ms).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric" }) : "";
+  $("compList").innerHTML = !compsLoaded ? `<div class="center">Načítám…</div>`
+    : mine.length ? mine.map(c => {
+      const st = compState(c);
+      return `<button class="ccard ${st === "live" ? "live" : ""}" data-comp="${esc(c.id)}">
+        <span class="cbadge">${st === "live" ? `<span class="dot"></span>Probíhá` : "Připravuje se"}</span>
+        <b>${esc(c.name || c.id)}</b>
+        <div class="m">Jste zapsán/a jako <b style="display:inline;font-size:13px">${judge}</b>${c.jury[judge] ? ` · ${esc(c.jury[judge])}` : ""}<br>${st === "live" ? `Zahájeno ${fmtD(c.startedAt)}` : `Založeno ${fmtD(c.createdAt)}`}</div></button>`;
+    }).join("")
+    : `<div class="center">Pro porotce <b style="color:var(--text)">${judge}</b> teď není otevřená žádná soutěž.<br>Zkontrolujte písmeno, nebo se zeptejte sčitatele.</div>`;
+}
+$("compList").onclick = e => { const b = e.target.closest("[data-comp]"); if (b) { comp = b.dataset.comp; start(); } };
+
+let compsLoaded = false, compsListening = false;
+function bootApp() {
+  showHome();
+  onAuthStateChanged(auth, user => {
+    if (!user || compsListening) return; compsListening = true;
+    onSnapshot(collection(db, "competitions"), snap => {
+      comps = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }])); compsLoaded = true;
+      if (screen === "home") renderHome(); if (screen === "list") renderList();
+    }, err => { $("homeSub").textContent = "Chyba načítání: " + err.code; });
+  });
+  signInAnonymously(auth).catch(e => { $("homeSub").textContent = "Přihlášení selhalo: " + e.code; });
 }
 
+let liveStarted = false;
 function start() {
-  store.set("ac_j_comp", comp); store.set("ac_j_judge", judge);
-  $("boot").style.display = "none";
-  $("setup").classList.add("hidden"); $("app").classList.remove("hidden");
+  store.set("ac_j_judge", judge);
+  showScreen("app");
   $("hJudge").textContent = judge;
-  $("hJudge").onclick = () => { if (confirm("Změnit porotce nebo soutěž?")) location.href = location.pathname; };
+  $("hJudge").onclick = () => { if (confirm("Odejít na úvodní obrazovku?")) location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : ""); };
   requestWakeLock();
-  let started = false;
-  onAuthStateChanged(auth, user => { if (user && !started) { started = true; listen(); } });
-  signInAnonymously(auth).catch(e => setConn("bad", "Přihlášení selhalo: " + e.code));
+  const go = () => { if (!liveStarted) { liveStarted = true; listen(); } };
+  if (auth.currentUser) go(); else onAuthStateChanged(auth, u => { if (u) go(); });
 }
 
 // ===================== PŘIPOJENÍ, PŘÍTOMNOST =====================
@@ -541,10 +617,10 @@ function simRound(kind) {
     groups: [{ n: 1, couples: couples.slice(0, 8) }, { n: 2, couples: couples.slice(8, 16) }, { n: 3, couples: couples.slice(16) }], status: "open", created: Date.now() };
 }
 function startSim(kind) {
-  const from = $("app").classList.contains("hidden") ? "setup" : "live";
+  const from = screen === "app" ? "live" : "home";
   if (!judge) judge = "A";
   sim = { from };
-  $("boot").style.display = "none"; $("setup").classList.add("hidden"); $("app").classList.remove("hidden");
+  showScreen("app");
   $("hJudge").textContent = judge; $("hSub").textContent = "Zkušební kolo – nic se neodesílá";
   setConn("wait", "Simulátor");
   const r = simRound(kind);
@@ -555,7 +631,7 @@ function startSim(kind) {
 }
 function exitSim() {
   const from = sim?.from; sim = null; sheets.clear(); rid = null; selC = selP = null;
-  if (from === "setup") { judge = (params.get("j") || store.get("ac_j_judge") || "").toUpperCase(); showSetup(); return; }
+  if (from === "home") { showHome(); return; }
   me = liveMe; rounds = liveRounds; updateConn();
   $("hSub").textContent = [compDoc.jury?.[judge], compDoc.name || comp].filter(Boolean).join(" · ");
   const o = openRounds(); if (o[0]) selectRound(o[0].id); else render();
@@ -566,7 +642,7 @@ document.addEventListener("click", e => {
 });
 
 // ===================== START =====================
-if (comp && judge) start(); else showSetup();
+bootApp();
 </script>
 </body>
 </html>
