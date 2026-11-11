@@ -55,6 +55,7 @@ button,input,select{font-family:inherit;color:inherit}
 .ccard.live .cbadge{background:var(--accent);color:var(--ink)}
 .ccard.live .cbadge .dot{background:var(--ink);animation:pulse 1.6s infinite}
 @keyframes pulse{50%{opacity:.3}}
+.credit{text-align:center;font-size:11px;color:var(--text3);padding:26px 0 6px;letter-spacing:.02em}
 .backbtn{height:34px;padding:0 12px;border-radius:10px;border:none;background:var(--glass2);font-size:14px;font-weight:600}
 .simbtns .btn{flex:1;height:44px;font-size:14px}
 .btn{height:40px;padding:0 16px;border-radius:11px;border:none;background:var(--glass2);font-size:15px;font-weight:600;cursor:pointer;transition:background .15s,transform .1s,opacity .15s}
@@ -111,7 +112,7 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:ma
 .fin .ln-glow.hl{stroke:rgba(91,140,255,.28)}
 .fin .end{fill:var(--accent);stroke:#05072b;stroke-width:2}
 .fin .end.hl{fill:var(--blue)}
-.fin svg .ln,.fin svg .ln-glow,.fin svg .end{animation:lnIn .25s ease-out}
+.fin svg .new{animation:lnIn .25s ease-out}
 @keyframes lnIn{from{opacity:0}}
 footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));background:rgba(5,7,43,.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--stroke)}
 .frow{display:flex;gap:8px;align-items:center}
@@ -161,6 +162,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <button id="hGo" class="btn primary" style="width:100%;height:52px;margin-top:22px" disabled>Pokračovat</button>
   <label style="margin-top:30px">Simulátor – vyzkoušejte si hodnocení bez odesílání</label>
   <div class="simbtns"><button class="btn" data-sim="prelim">1. kolo</button><button class="btn" data-sim="final">Finále</button></div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026</div>
 </div>
 
 <div id="list" class="setup home hidden">
@@ -168,11 +170,12 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <div class="kicker" style="margin-top:18px">Porotce <span id="lJ"></span></div>
   <h1>Vaše soutěže</h1>
   <div id="compList"></div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026</div>
 </div>
 
 <div id="app" class="hidden">
   <header>
-    <img class="hlogo" src="data:image/png;base64,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" alt="Artimo">
+    <img class="hlogo" id="hLogo" src="data:image/png;base64,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" alt="Artimo" style="cursor:pointer">
     <div class="jbadge" id="hJudge">?</div>
     <div class="who"><b id="hRound">Čekám na kolo…</b><span id="hSub"></span></div>
     <div class="scol"><div class="srow"><span class="dot" id="connDot"></span><span id="connText">…</span></div>
@@ -317,7 +320,7 @@ function start() {
   store.set("ac_j_judge", judge);
   showScreen("app");
   $("hJudge").textContent = judge;
-  $("hJudge").onclick = () => { if (confirm("Odejít na úvodní obrazovku?")) location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : ""); };
+  $("hJudge").onclick = goHome;
   requestWakeLock();
   const go = () => { if (!liveStarted) { liveStarted = true; listen(); } };
   if (auth.currentUser) go(); else onAuthStateChanged(auth, u => { if (u) go(); });
@@ -408,9 +411,7 @@ function render() {
     const info = sim ? "" : others.length
       ? `<div style="margin-top:18px;font-size:13px;line-height:1.6">Právě probíhá:<br>${others.map(x => `<b style="color:var(--text)">${esc(titleOf(x))}</b> – hodnotí ${(x.judges || []).join(", ")}`).join("<br>")}<br>Porotce ${judge} v tomto kole není. Pokud to nesedí, ozvěte se sčitateli.</div>`
       : `<div style="margin-top:18px;font-size:13px">Sčitatel zatím nespustil žádné kolo.</div>`;
-    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}
-      <div style="margin-top:34px;font-size:13px">Mezitím si můžete vyzkoušet hodnocení v simulátoru:</div>
-      <div class="simbtns" style="max-width:340px;margin:10px auto 0"><button class="btn" data-sim="prelim">1. kolo</button><button class="btn" data-sim="final">Finále</button></div></div>`;
+    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}<div class="credit" style="margin-top:40px">ArtimoCounter, created by Martin Hejhal, 2026</div></div>`;
     return;
   }
   $("hRound").textContent = titleOf(r);
@@ -497,11 +498,12 @@ function fitFinal(N) {
   const cs = getComputedStyle(el), avail = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - fixed - 2;
   fin.style.height = Math.max(avail, N * 44 + (N - 1) * 8) + "px";
 }
+let drawnLinks = new Set();               // už vykreslená spojení – animuje se jen nové
 function drawLines() {
   const fin = $("fin"), svg = $("lines"); if (!fin || !svg) return;
   const r = rounds.get(rid); if (!r || r.type !== "final") return;
   const dr = draftFor(r, dance), box = fin.getBoundingClientRect();
-  const W = box.width;
+  const W = box.width, now = new Set();
   const defs = `<defs><linearGradient id="lnGrad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${W}" y2="0">
     <stop offset="0" stop-color="#f5d3a8"/><stop offset="1" stop-color="#ffe9cc"/></linearGradient></defs>`;
   svg.innerHTML = defs + Object.entries(dr.assign).map(([c, p]) => {
@@ -509,9 +511,11 @@ function drawLines() {
     if (!a || !b) return "";
     const x1 = a.right - box.left + 1, y1 = a.top + a.height / 2 - box.top, x2 = b.left - box.left - 1, y2 = b.top + b.height / 2 - box.top;
     const k = (x2 - x1) * .5, d = `M${x1},${y1} C${x1 + k},${y1} ${x2 - k},${y2} ${x2},${y2}`;   // plynulá S-křivka
-    const hl = selC === +c ? "hl" : "";
-    return `<path class="ln-glow ${hl}" d="${d}"/><path class="ln ${hl}" d="${d}"/><circle class="end ${hl}" cx="${x1}" cy="${y1}" r="4"/><circle class="end ${hl}" cx="${x2}" cy="${y2}" r="4"/>`;
+    const key = `${dance}:${c}-${p}`, nw = drawnLinks.has(key) ? "" : "new"; now.add(key);
+    const hl = selC === +c ? "hl" : "", cl = `${hl} ${nw}`;
+    return `<path class="ln-glow ${cl}" d="${d}"/><path class="ln ${cl}" d="${d}"/><circle class="end ${cl}" cx="${x1}" cy="${y1}" r="4"/><circle class="end ${cl}" cx="${x2}" cy="${y2}" r="4"/>`;
   }).join("");
+  drawnLinks = now;
 }
 addEventListener("resize", () => { const r = rounds.get(rid); if (r?.type === "final") { fitFinal(r.couples.length); requestAnimationFrame(drawLines); } else fitPrelim(); });
 
@@ -625,6 +629,29 @@ $("qrBtn").onclick = () => {
     ${inner}<button class="btn primary" style="width:100%;margin-top:14px;height:46px" id="qrClose">Zavřít</button></div></div>`;
   $("qrClose").onclick = () => $("overlay").innerHTML = "";
 };
+
+// ===================== NÁVRAT NA HOMESCREEN =====================
+// Uprostřed hodnocení (otevřené kolo, neodeslané nebo nevyplněné tance) se nejdřív zeptá.
+function midEvaluation() {
+  const r = rounds.get(rid);
+  if (!r || r.status !== "open") return false;
+  if (settings().requireReady && me.readyFor !== r.id) return false;
+  return r.dances.some(d => { const dr = drafts.get(`${r.id}|${d}`), s = sheets.get(d); return !s || (dr && dr.dirty && !sameAsSheet(r, dr, s.data)); });
+}
+function leaveToHome() {
+  if (sim) { exitSim(); if (screen !== "home") location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : ""); return; }
+  location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : "");
+}
+function goHome() {
+  if (!midEvaluation()) { leaveToHome(); return; }
+  $("overlay").innerHTML = `<div class="overlay"><div class="sheet"><h3>Odejít z hodnocení?</h3>
+    <p>${sim ? "Simulátor se ukončí." : "Kolo ještě nemáte celé odeslané. Odeslané tance zůstanou uložené, rozpracované se ztratí."}</p>
+    <div style="display:flex;gap:8px;margin-top:6px"><button class="btn" style="flex:1;height:46px" id="ghNo">Zůstat</button>
+    <button class="btn primary" style="flex:1;height:46px" id="ghYes">Odejít</button></div></div></div>`;
+  $("ghNo").onclick = () => $("overlay").innerHTML = "";
+  $("ghYes").onclick = () => { $("overlay").innerHTML = ""; leaveToHome(); };
+}
+$("hLogo").onclick = goHome;
 
 // ===================== SIMULÁTOR =====================
 function simRound(kind) {
