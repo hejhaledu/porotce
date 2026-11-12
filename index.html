@@ -70,7 +70,7 @@ button,input,select{font-family:inherit;color:inherit}
 .in:focus{border-color:var(--blue)}
 select.in option{background:#11154a}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--gray);display:inline-block;flex:0 0 auto}
-.dot.ok{background:var(--green)}.dot.wait{background:var(--orange)}.dot.bad{background:var(--red)}
+.dot.ok{background:var(--green)}.dot.wait{background:var(--orange)}.dot.bad{background:var(--red)}.dot.saved{background:var(--blue)}
 
 #app{display:flex;flex-direction:column;height:100%}
 header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));background:rgba(5,7,43,.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--stroke)}
@@ -165,7 +165,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <button id="hGo" class="btn primary" style="width:100%;height:52px;margin-top:22px" disabled>Pokračovat</button>
   <label style="margin-top:30px">Simulátor – vyzkoušejte si hodnocení bez odesílání</label>
   <div class="simbtns"><button class="btn" data-sim="prelim">1. kolo</button><button class="btn" data-sim="final">Finále</button></div>
-  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v3.0</div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v4.0</div>
 </div>
 
 <div id="list" class="setup home hidden">
@@ -173,7 +173,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <div class="kicker" style="margin-top:18px">Porotce <span id="lJ"></span></div>
   <h1>Vaše soutěže</h1>
   <div id="compList"></div>
-  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v3.0</div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v4.0</div>
 </div>
 
 <div id="app" class="hidden">
@@ -203,7 +203,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache,
-         collection, doc, setDoc, onSnapshot, query, where, serverTimestamp }
+         collection, doc, setDoc, getDoc, onSnapshot, query, where, serverTimestamp, writeBatch, increment }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -217,14 +217,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 let db;
+let memCache = false;
 try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
-catch { bootError("Offline úložiště není dostupné, aplikace poběží bez něj."); db = initializeFirestore(app, { localCache: memoryLocalCache() }); }
+catch { memCache = true; bootError("Offline úložiště není dostupné, aplikace poběží bez něj."); db = initializeFirestore(app, { localCache: memoryLocalCache() }); }
 
 const DANCES = { W:"Waltz", T:"Tango", V:"Valčík", F:"Slowfox", Q:"Quickstep",
                  S:"Samba", C:"Cha-cha", R:"Rumba", P:"Paso doble", J:"Jive", K:"Polka" };
 const DEFAULTS = { requireReady: true, qr: true, colorMarks: true, autoNext: true };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const APP_VER = "v4.0";
 const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 const pary = n => `${n} ${n === 1 ? "pár" : n >= 2 && n <= 4 ? "páry" : "párů"}`;
 const titleOf = r => r.category ? `${r.category} · ${r.label}` : (r.name || "");
@@ -337,6 +339,37 @@ function bootApp() {
   signInAnonymously(auth).catch(e => { $("homeSub").textContent = "Přihlášení selhalo: " + e.code; });
 }
 
+// Každý telefon má své ID. Písmeno porotce „drží“ jen jedno zařízení; druhé se musí výslovně převzít.
+const deviceId = (() => { let d = store.get("ac_device"); if (!d) { d = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store.set("ac_device", d); } return d; })();
+let holder = true;
+async function claimLetter(force) {
+  if (!force) {
+    try {
+      const snap = await Promise.race([getDoc(judgeRef()), new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 4000))]);
+      const d = snap.data();
+      // nezávisle na hodinách telefonu: drží-li písmeno jiné zařízení, vždy se zeptáme
+      if (d?.deviceId && d.deviceId !== deviceId) {
+        const ok = await askTakeover();
+        if (ok) { diagInc("takeovers"); diagEvent("převzetí písmene"); }
+        if (!ok) { location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : ""); return false; }
+      }
+    } catch {}                         // bez spojení: převezmeme (zápis se odešle po připojení)
+  }
+  holder = true;
+  if (force) { diagInc("takeovers"); diagEvent("převzetí písmene"); }
+  setDoc(judgeRef(), { letter: judge, deviceId, claimedAt: serverTimestamp(), lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
+  return true;
+}
+function askTakeover() {
+  return new Promise(res => {
+    $("overlay").innerHTML = `<div class="overlay"><div class="sheet"><h3>Porotce ${judge} je přihlášen jinde</h3>
+      <p>Písmeno ${judge} je přihlášené na jiném zařízení. Hodnotit může vždy jen jedno zařízení.<br>Pokud jste to vy na jiném telefonu, můžete hodnocení převzít sem.</p>
+      <div style="display:flex;gap:8px"><button class="btn" style="flex:1;height:46px" id="toNo">Zpět</button><button class="btn primary" style="flex:1;height:46px" id="toYes">Převzít sem</button></div></div></div>`;
+    $("toNo").onclick = () => { $("overlay").innerHTML = ""; res(false); };
+    $("toYes").onclick = () => { $("overlay").innerHTML = ""; res(true); };
+  });
+}
+
 let liveStarted = false;
 function start() {
   store.set("ac_j_judge", judge);
@@ -344,7 +377,8 @@ function start() {
   $("hJudge").textContent = judge;
   $("hJudge").onclick = goHome;
   requestWakeLock();
-  const go = () => { if (!liveStarted) { liveStarted = true; listen(); } };
+  if (memCache) toast("Prohlížeč neukládá offline", "Nezavírejte stránku, dokud lístek neukazuje „Uloženo na serveru“.");
+  const go = async () => { if (liveStarted) return; liveStarted = true; if (await claimLetter(false)) listen(); };
   if (auth.currentUser) go(); else onAuthStateChanged(auth, u => { if (u) go(); });
 }
 
@@ -353,18 +387,55 @@ function setConn(cls, text) { if (sim) { cls = "wait"; text = "Simulátor"; } $(
 function updateConn() { if (!online) setConn("bad", "Offline"); else if (!serverConnected) setConn("wait", "Připojování"); else setConn("ok", "Online"); }
 addEventListener("online", () => { online = true; updateConn(); });
 addEventListener("offline", () => { online = false; updateConn(); });
-let wakeLock = null;
-async function requestWakeLock() { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {} }
+let wakeLock = null, wakeWarned = false;
+// Displej musí zůstat rozsvícený; když to telefon neumí, porotce dostane jednorázovou radu.
+async function requestWakeLock() {
+  let ok = false;
+  try { if (navigator.wakeLock) { wakeLock = await navigator.wakeLock.request("screen"); ok = true; } } catch {}
+  diagSet({ wake: ok });
+  if (!ok && !wakeWarned && document.visibilityState === "visible") {
+    wakeWarned = true;
+    toast("Telefon může zhasínat displej", "Nastavte automatický zámek na „Nikdy“ (iPhone: Nastavení → Zobrazení a jas; Android: Displej → Časový limit) a nechte aplikaci otevřenou.");
+  }
+}
+
+// ----- deník přenosu (v4.0): měří telefon sám, sčitatel ho vidí v „Deník přenosu“ -----
+let diag = {}, diagFor = null;
+const diagKey = () => `ac_diag_${comp}_${judge}`;
+function diagLoad() { diagFor = diagKey(); try { diag = JSON.parse(store.get(diagFor) || "{}") || {}; } catch { diag = {}; } }
+function diagReady() { if (diagFor !== diagKey()) diagLoad(); }
+function diagSave() { if (sim || !comp || !judge) return; store.set(diagKey(), JSON.stringify(diag)); }
+function diagSet(o) { diagReady(); Object.assign(diag, o); diagSave(); }
+function diagInc(k, by = 1) { diagReady(); diag[k] = (diag[k] || 0) + by; diagSave(); }
+function diagEvent(e) { diagReady(); diag.events = [...(diag.events || []), { t: Date.now(), e }].slice(-15); diagSave(); }
+let everConnected = false, offStart = null;
+function trackConn(connected) {
+  if (sim) return;
+  if (connected) {
+    if (offStart) { const ms = Date.now() - offStart; diagInc("offMs", ms); diagEvent(`spojení obnoveno po ${Math.round(ms / 1000)} s`); offStart = null; beat(); }
+    everConnected = true;
+  } else if (everConnected && !offStart) { offStart = Date.now(); diagInc("offCount"); diagEvent("výpadek spojení"); }
+}
 const judgeRef = () => doc(db, "competitions", comp, "judges", judge);
+// Tep jednou za minutu a jen se signálem (bez signálu by se zbytečně řadil do fronty).
 function beat() {
   if (document.visibilityState !== "visible") return;
-  setDoc(judgeRef(), { letter: judge, uid: auth.currentUser?.uid || null, lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
+  if (!holder) return;                // převzaté jiným zařízením – nebojovat o písmeno
+  if (!online || offStart) return;
+  setDoc(judgeRef(), { letter: judge, uid: auth.currentUser?.uid || null, lastSeen: serverTimestamp(), ver: APP_VER, diag }, { merge: true }).catch(() => {});
 }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { requestWakeLock(); beat(); } });
 
+let roundsSig = null, seenOpen = null;
 function listen() {
-  beat(); setInterval(beat, 45000);
-  onSnapshot(judgeRef(), snap => { liveMe = snap.data() || {}; if (!sim) { me = liveMe; render(); } });
+  diagReady(); beat(); setInterval(beat, 60000);
+  let meSig = null;
+  onSnapshot(judgeRef(), snap => {
+    liveMe = snap.data() || {};
+    holder = !liveMe.deviceId || liveMe.deviceId === deviceId;
+    const sig = JSON.stringify([holder, liveMe.readyFor ?? null]);      // tep (lastSeen) nepřekresluje obrazovku
+    if (!sim) { me = liveMe; if (sig !== meSig) { meSig = sig; render(); } }
+  });
   onSnapshot(doc(db, "competitions", comp), snap => {
     compDoc = snap.data() || {};
     const name = compDoc.jury?.[judge];
@@ -372,10 +443,17 @@ function listen() {
     render();
   });
   onSnapshot(collection(db, "competitions", comp, "rounds"), { includeMetadataChanges: true }, snap => {
-    serverConnected = !snap.metadata.fromCache; updateConn();
-    allRounds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    allRounds = allRounds.filter(validRound);
+    serverConnected = !snap.metadata.fromCache; updateConn(); trackConn(serverConnected);
+    const fresh = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(validRound);
+    // potvrzení jiných porotců a metadata nepřekreslují obrazovku
+    const sig = JSON.stringify(fresh.map(r => { const { acks, ackAt, ...rest } = r; return [rest, r.judges.includes(judge) ? Object.entries(acks || {}).filter(([k]) => k.endsWith("_" + judge)).sort() : null]; }));
+    if (sig === roundsSig) return;
+    roundsSig = sig;
+    allRounds = fresh;
     liveRounds = new Map(allRounds.filter(r => r.judges.includes(judge)).map(r => [r.id, r]));
+    const openNow = [...liveRounds.values()].filter(r => r.status === "open");
+    if (seenOpen) for (const r of openNow) if (!seenOpen.has(r.id) && !sim) { navigator.vibrate?.([220, 120, 220]); toast("Nové kolo", `${r.category || ""} · ${r.label}`); diagEvent(`nové kolo ${r.label}`); }
+    seenOpen = new Set(openNow.map(r => r.id));
     if (sim) return;
     rounds = liveRounds;
     const o = openRounds(), cur = rounds.get(rid);
@@ -408,7 +486,12 @@ function draftFor(r, d) {
   }
   return drafts.get(key);
 }
-const isValid = (r, dr) => r.type === "prelim" ? dr.marks.size === r.required : Object.keys(dr.assign).length === r.couples.length;
+const acked = (r, d) => { const s = sheets.get(d)?.data; return !!s && Number.isInteger(s.rev) && (r.acks?.[`${d}_${judge}`] || 0) >= s.rev; };
+const isValid = (r, dr) => {
+  if (r.type === "prelim") return dr.marks.size === r.required;
+  const n = r.couples.length, pv = Object.values(dr.assign);
+  return pv.length === n && new Set(pv).size === n && pv.every(p => Number.isInteger(p) && p >= 1 && p <= n);
+};
 function sameAsSheet(r, dr, s) {
   if (!s) return false;
   if (r.type === "prelim") { const m = Array.isArray(s.marks) ? s.marks : []; return m.length === dr.marks.size && m.every(x => dr.marks.has(x)); }
@@ -428,6 +511,13 @@ function render() {
   $("roundBar").classList.toggle("hidden", openRounds().length < 2);
   $("roundSel").innerHTML = list.filter(x => x.status === "open" || x.id === rid).map(x => `<option value="${x.id}" ${x.id === rid ? "selected" : ""}>${esc(titleOf(x))}${x.status !== "open" ? " (uzavřeno)" : ""}</option>`).join("");
   $("readyRow").classList.toggle("hidden", !(r && r.status === "open" && me.readyFor === r.id));
+  if (!sim && !holder) {
+    $("tabs").classList.add("hidden"); $("footer").classList.add("hidden"); $("roundBar").classList.add("hidden");
+    $("content").innerHTML = `<div class="center"><h2>Převzato jiným zařízením</h2>Hodnocení porotce <b style="color:var(--text)">${judge}</b> teď probíhá na jiném telefonu nebo tabletu. Z tohoto zařízení nelze odesílat.
+      <button class="btn primary" id="takeBack">Převzít zpět sem</button></div>`;
+    $("takeBack").onclick = async () => { if (await askTakeover()) { await claimLetter(true); render(); } };
+    return;
+  }
   if (!r) {
     $("tabs").classList.add("hidden"); $("footer").classList.add("hidden");
     $("hRound").textContent = "Čekám na kolo…";
@@ -435,7 +525,7 @@ function render() {
     const info = sim ? "" : others.length
       ? `<div style="margin-top:18px;font-size:13px;line-height:1.6">Právě probíhá:<br>${others.map(x => `<b style="color:var(--text)">${esc(titleOf(x))}</b> – hodnotí ${(x.judges || []).join(", ")}`).join("<br>")}<br>Porotce ${judge} v tomto kole není. Pokud to nesedí, ozvěte se sčitateli.</div>`
       : `<div style="margin-top:18px;font-size:13px">Sčitatel zatím nespustil žádné kolo.</div>`;
-    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}<div class="credit" style="margin-top:40px">ArtimoCounter, created by Martin Hejhal, 2026, v3.0</div></div>`;
+    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}<div class="credit" style="margin-top:40px">ArtimoCounter, created by Martin Hejhal, 2026, v4.0</div></div>`;
     return;
   }
   $("hRound").textContent = titleOf(r);
@@ -458,7 +548,7 @@ function render() {
 
   $("tabs").classList.remove("hidden"); $("footer").classList.remove("hidden");
   $("tabs").innerHTML = r.dances.map(d => {
-    const s = sheets.get(d), cls = !s ? "" : s.pending ? "wait" : "ok";
+    const s = sheets.get(d), cls = !s ? "" : s.pending ? "wait" : acked(r, d) ? "ok" : "saved";
     return `<button class="tab ${d === dance ? "sel" : ""}" data-d="${d}"><span class="dot ${cls}"></span>${DANCES[d]}</button>`;
   }).join("");
 
@@ -474,14 +564,16 @@ function render() {
   $("sendBtn").disabled = locked || !isValid(r, dr) || same;
   $("sendBtn").textContent = s ? "Odeslat opravu" : "Odeslat";
   $("clearBtn").disabled = locked;
+  $("clearBtn").textContent = s && dr.dirty && !same ? "Vrátit" : "Smazat";
   let stt;
   if (!s) stt = `<span class="dot"></span>Neodesláno`;
   else if (!same) stt = `<span class="dot wait"></span>Neodeslané změny`;
   else if (s.pending) stt = `<span class="dot wait"></span>V telefonu, čeká na signál`;
-  else stt = `<span class="dot ok"></span>Přijato sčitatelem${s.data.rev > 1 ? ` (v${s.data.rev})` : ""}`;
+  else if (acked(r, dance)) stt = `<span class="dot ok"></span>Převzato sčitatelem ✓${s.data.rev > 1 ? ` (v${s.data.rev})` : ""}`;
+  else stt = `<span class="dot saved"></span>Uloženo na serveru · čeká na sčitatele`;
   $("status").innerHTML = `<span style="display:inline-flex;align-items:center;gap:7px">${stt}</span>`;
   $("qrBtn").classList.toggle("hidden", !st.qr);
-  $("qrBtn").disabled = !qrPayload(r);
+  $("qrBtn").disabled = !qrPayload(r) && !qrBlocked(r);
 }
 
 function renderPrelim(r, dr, banner, locked, st) {
@@ -599,7 +691,9 @@ function link(r, c, p) {
 }
 
 $("clearBtn").onclick = () => {
-  const r = rounds.get(rid), dr = draftFor(r, dance);
+  const r = rounds.get(rid); if (!r) return;
+  const dr = draftFor(r, dance), s = sheets.get(dance)?.data;
+  if (s && dr.dirty && !sameAsSheet(r, dr, s)) { drafts.delete(`${r.id}|${dance}`); selC = selP = null; render(); return; }   // Vrátit k odeslané verzi
   if (r.type === "prelim") dr.marks.clear(); else dr.assign = {};
   dr.dirty = true; selC = selP = null; render();
 };
@@ -611,15 +705,32 @@ $("sendBtn").onclick = () => {
   const dr = draftFor(r, dance);
   if (r.status !== "open" || !isValid(r, dr) || sameAsSheet(r, dr, sheets.get(dance)?.data)) return;
   sending = true; $("sendBtn").disabled = true; setTimeout(() => { sending = false; render(); }, 600);
+  if (!sim && !holder) { toast("Nelze odeslat", "Hodnocení převzalo jiné zařízení."); return; }
   const prev = sheets.get(dance)?.data;
-  const data = { judge, dance, type: r.type, uid: auth.currentUser?.uid || null, clientAt: Date.now(), sentAt: serverTimestamp(), source: "app", rev: (prev?.rev || 0) + 1 };
+  const data = { judge, dance, type: r.type, uid: auth.currentUser?.uid || null, deviceId, clientAt: Date.now(), sentAt: serverTimestamp(), source: "app", writer: "porotce" };
   if (r.type === "prelim") data.marks = [...dr.marks].sort((a, b) => a - b);
   else data.placings = Object.fromEntries(Object.entries(dr.assign).map(([c, p]) => [String(c), p]));
+  // záloha konceptu – kdyby server zápis odmítl (např. kolo mezitím uzavřené), hodnocení se neztratí
+  const d0 = dance, key = `${r.id}|${d0}`;
+  const backup = r.type === "prelim" ? { dirty: true, marks: new Set(data.marks) } : { dirty: true, assign: { ...dr.assign } };
   if (sim) {
-    const d0 = dance; sheets.set(d0, { data, pending: true });
-    setTimeout(() => { const x = sheets.get(d0); if (x) x.pending = false; render(); }, 700);
-  } else setDoc(doc(db, "competitions", comp, "rounds", rid, "sheets", `${dance}_${judge}`), data)
-    .catch(e => { toast("Lístek se neodeslal", errText(e)); $("status").innerHTML = `<span class="dot bad"></span> Neodesláno – zkuste znovu nebo použijte QR`; dr.dirty = true; });
+    sheets.set(d0, { data: { ...data, rev: (prev?.rev || 0) + 1 }, pending: true });
+    setTimeout(() => { const x = sheets.get(d0); if (x) { x.pending = false; r.acks = { ...(r.acks || {}), [`${d0}_${judge}`]: x.data.rev }; } render(); }, 700);
+  } else {
+    const b = writeBatch(db);
+    b.set(doc(db, "competitions", comp, "rounds", rid, "sheets", `${d0}_${judge}`), { ...data, rev: increment(1) });   // revizi zvyšuje server
+    b.set(doc(collection(db, "competitions", comp, "log")), { at: serverTimestamp(), ts: data.clientAt, who: `porotce ${judge}`, action: "odeslání lístku",
+      round: rid, dance: d0, judge, deviceId, ...(r.type === "prelim" ? { marks: data.marks } : { placings: data.placings }) });
+    const t0 = Date.now(); diagInc("sends");
+    b.commit().then(() => { const dt = Date.now() - t0; diagReady(); diag.delivered = (diag.delivered || 0) + 1; diag.deliverSum = (diag.deliverSum || 0) + dt; diag.deliverMax = Math.max(diag.deliverMax || 0, dt); diagSave(); if (dt > 10000) diagEvent(`lístek ${DANCES[d0] || d0} doručen až po ${Math.round(dt / 1000)} s`); })
+    .catch(e => {
+      diagInc("fails"); diagEvent(`odmítnutý zápis (${e?.code || "chyba"})`);
+      const cur = drafts.get(key);
+      if (!cur || !cur.dirty) { drafts.set(key, backup); toast("Lístek se neodeslal", `${errText(e)} Hodnocení zůstalo v telefonu – můžete ho poslat znovu nebo přes QR.`); }
+      else toast("Lístek se neodeslal", `${errText(e)} Vaše rozpracovaná oprava zůstala – dokončete ji a odešlete znovu.`);
+      render();
+    });
+  }
   dr.dirty = false; navigator.vibrate?.(30);
   if (settings().autoNext) {
     const next = r.dances.find(d => d !== dance && !sheets.has(d));
@@ -628,9 +739,15 @@ $("sendBtn").onclick = () => {
 };
 
 // ===================== QR OFFLINE =====================
-// AC2;c=<soutěž>;r=<kolo>;j=<porotce>;t=p|f;ts=<ms>;S=1.4.7;C=...
+// AC2;c=<soutěž>;r=<kolo>;j=<porotce>;t=p|f;ts=<ms>;v=S2.C1;S=1.4.7;C=...  (v = revize lístků na serveru, ze kterých telefon vychází)
+// Tanec s rozpracovanou (neúplnou) opravou – QR by obsahoval staré hodnocení, proto ho nevytvoříme.
+function qrBlocked(r) {
+  return r.dances.find(d => { const dr = drafts.get(`${r.id}|${d}`), s = sheets.get(d)?.data; return dr && dr.dirty && !isValid(r, dr) && !sameAsSheet(r, dr, s); }) || null;
+}
 function qrPayload(r) {
-  const parts = ["AC2", `c=${sim ? "simulace" : comp}`, `r=${r.id}`, `j=${judge}`, `t=${r.type === "final" ? "f" : "p"}`, `ts=${Date.now()}`];
+  if (qrBlocked(r)) return null;
+  const parts = ["AC2", `c=${sim ? "simulace" : comp}`, `r=${r.id}`, `j=${judge}`, `t=${r.type === "final" ? "f" : "p"}`, `ts=${Date.now()}`,
+    `v=${r.dances.map(d => d + (Number.isInteger(sheets.get(d)?.data?.rev) ? sheets.get(d).data.rev : 0)).join(".")}`];   // revize, ze kterých telefon vychází
   for (const d of r.dances) {
     const dr = draftFor(r, d), s = sheets.get(d)?.data;
     let nums = null;
@@ -654,8 +771,12 @@ function loadQrLib() {
     sc.onload = () => window.qrcode ? res() : rej(new Error("Knihovna QR se nenačetla.")); sc.onerror = () => { sc.remove(); rej(new Error("Knihovna QR se nenačetla – chybí internet.")); }; document.head.appendChild(sc); });
 }
 $("qrBtn").onclick = async () => {
-  const r = rounds.get(rid); const text = r && qrPayload(r);
+  const r = rounds.get(rid); if (!r) return;
+  const blk = qrBlocked(r);
+  if (blk) { toast("QR teď nejde vytvořit", `V tanci ${DANCES[blk]} máte rozpracovanou opravu. Dokončete ji, nebo ji vraťte tlačítkem Vrátit.`); return; }
+  const text = qrPayload(r);
   if (!text) return;
+  if (!sim) { diagInc("qr"); diagEvent(`QR ${r.label}`); }
   try { await loadQrLib(); } catch {}
   let inner;
   try { inner = window.qrcode ? `<div class="qrwrap">${qrSvg(text)}</div>` : `<p style="color:#ff8a8d">Knihovna QR se nenačetla. Připojte se na chvíli k internetu a zkuste to znovu.</p>`; }
