@@ -56,6 +56,9 @@ button,input,select{font-family:inherit;color:inherit}
 .ccard.live .cbadge .dot{background:var(--ink);animation:pulse 1.6s infinite}
 @keyframes pulse{50%{opacity:.3}}
 .credit{text-align:center;font-size:11px;color:var(--text3);padding:26px 0 6px;letter-spacing:.02em}
+.toasts{position:fixed;left:12px;right:12px;bottom:calc(96px + env(safe-area-inset-bottom));z-index:90;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;padding:11px 14px;border-radius:14px;background:#3a1420;border:1px solid rgba(255,90,95,.55);color:#ffd5d6;font-size:14px;line-height:1.4;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.toast b{display:block}
 .backbtn{height:34px;padding:0 12px;border-radius:10px;border:none;background:var(--glass2);font-size:14px;font-weight:600}
 .simbtns .btn{flex:1;height:44px;font-size:14px}
 .btn{height:40px;padding:0 16px;border-radius:11px;border:none;background:var(--glass2);font-size:15px;font-weight:600;cursor:pointer;transition:background .15s,transform .1s,opacity .15s}
@@ -194,6 +197,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   </footer>
 </div>
 <div id="overlay"></div>
+<div class="toasts" id="toasts"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -224,6 +228,24 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&l
 const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 const pary = n => `${n} ${n === 1 ? "pár" : n >= 2 && n <= 4 ? "páry" : "párů"}`;
 const titleOf = r => r.category ? `${r.category} · ${r.label}` : (r.name || "");
+const FB_ERR = { "permission-denied": "Databáze odmítla zápis.", "unavailable": "Databáze je nedostupná – data se odešlou po připojení.",
+  "resource-exhausted": "Byl vyčerpán denní limit databáze – použijte QR offline.", "deadline-exceeded": "Databáze neodpověděla včas." };
+const errText = e => (e && FB_ERR[e.code]) || e?.message || String(e);
+function toast(title, msg = "") {
+  const box = document.getElementById("toasts"); if (!box) return;
+  const el = document.createElement("div"); el.className = "toast"; el.innerHTML = `<b>${esc(title)}</b>${esc(msg)}`;
+  el.onclick = () => el.remove(); box.appendChild(el); setTimeout(() => el.remove(), 8000);
+}
+addEventListener("unhandledrejection", e => { if (document.getElementById("boot")?.style.display === "none") toast("Neočekávaná chyba", errText(e.reason)); });
+// Kolo z databáze se použije, jen když má všechny potřebné údaje (poškozený záznam aplikaci neshodí).
+const DANCE_CODES = ["W","T","V","F","Q","S","C","R","P","J","K"];
+const intArr = a => Array.isArray(a) && a.length > 0 && a.every(n => Number.isInteger(n) && n > 0);
+function validRound(r) {
+  return r && ["prelim", "final"].includes(r.type) && intArr(r.couples) && new Set(r.couples).size === r.couples.length
+    && Array.isArray(r.dances) && r.dances.length && r.dances.every(d => DANCE_CODES.includes(d)) && Array.isArray(r.judges)
+    && (r.type === "final" || (Number.isInteger(r.required) && r.required > 0))
+    && (r.groups == null || (Array.isArray(r.groups) && r.groups.every(g => intArr(g?.couples))));
+}
 
 const params = new URLSearchParams(location.search);
 let comp = (params.get("c") || "").toLowerCase();       // soutěž z odkazu (jen pro zvýraznění)
@@ -310,7 +332,7 @@ function bootApp() {
     onSnapshot(collection(db, "competitions"), snap => {
       comps = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }])); compsLoaded = true;
       if (screen === "home") renderHome(); if (screen === "list") renderList();
-    }, err => { $("homeSub").textContent = "Chyba načítání: " + err.code; });
+    }, err => { $("homeSub").textContent = "Soutěže se nenačetly: " + errText(err); toast("Soutěže se nenačetly", errText(err)); });
   });
   signInAnonymously(auth).catch(e => { $("homeSub").textContent = "Přihlášení selhalo: " + e.code; });
 }
@@ -352,13 +374,14 @@ function listen() {
   onSnapshot(collection(db, "competitions", comp, "rounds"), { includeMetadataChanges: true }, snap => {
     serverConnected = !snap.metadata.fromCache; updateConn();
     allRounds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    liveRounds = new Map(allRounds.filter(r => r.judges?.includes(judge)).map(r => [r.id, r]));
+    allRounds = allRounds.filter(validRound);
+    liveRounds = new Map(allRounds.filter(r => r.judges.includes(judge)).map(r => [r.id, r]));
     if (sim) return;
     rounds = liveRounds;
     const o = openRounds(), cur = rounds.get(rid);
     if ((!cur || cur.status !== "open") && o[0]) selectRound(o[0].id);
     else { if (!cur) rid = null; render(); }
-  }, err => setConn("bad", "Chyba: " + err.code));
+  }, err => { setConn("bad", "Chyba spojení"); toast("Kola se nenačetla", errText(err)); });
 }
 const openRounds = () => [...rounds.values()].filter(r => r.status === "open").sort((a, b) => (b.created || 0) - (a.created || 0));
 
@@ -368,7 +391,8 @@ function selectRound(id) {
   if (sim) { render(); return; }
   unsubSheets = onSnapshot(query(collection(db, "competitions", comp, "rounds", id, "sheets"), where("judge", "==", judge)),
     { includeMetadataChanges: true },
-    snap => { if (sim) return; sheets = new Map(snap.docs.map(d => [d.data().dance, { data: d.data(), pending: d.metadata.hasPendingWrites }])); render(); });
+    snap => { if (sim) return; sheets = new Map(snap.docs.map(d => [d.data().dance, { data: d.data(), pending: d.metadata.hasPendingWrites }])); render(); },
+    err => toast("Lístky se nenačetly", errText(err)));
   render();
 }
 $("roundSel").onchange = e => selectRound(e.target.value);
@@ -379,16 +403,16 @@ function draftFor(r, d) {
   if (!drafts.has(key) || !drafts.get(key).dirty) {
     const s = sheets.get(d)?.data;
     drafts.set(key, r.type === "prelim"
-      ? { dirty: false, marks: new Set(s?.marks || []) }
-      : { dirty: false, assign: s ? Object.fromEntries(Object.entries(s.placings).map(([c, p]) => [c, p])) : {} });
+      ? { dirty: false, marks: new Set(Array.isArray(s?.marks) ? s.marks.filter(c => r.couples.includes(c)) : []) }
+      : { dirty: false, assign: s?.placings && typeof s.placings === "object" ? Object.fromEntries(Object.entries(s.placings).filter(([c, p]) => r.couples.includes(+c) && Number.isInteger(p))) : {} });
   }
   return drafts.get(key);
 }
 const isValid = (r, dr) => r.type === "prelim" ? dr.marks.size === r.required : Object.keys(dr.assign).length === r.couples.length;
 function sameAsSheet(r, dr, s) {
   if (!s) return false;
-  if (r.type === "prelim") return s.marks.length === dr.marks.size && s.marks.every(m => dr.marks.has(m));
-  const a = Object.entries(dr.assign).map(([c, p]) => `${c}:${p}`).sort().join(), b = Object.entries(s.placings).map(([c, p]) => `${c}:${p}`).sort().join();
+  if (r.type === "prelim") { const m = Array.isArray(s.marks) ? s.marks : []; return m.length === dr.marks.size && m.every(x => dr.marks.has(x)); }
+  const a = Object.entries(dr.assign).map(([c, p]) => `${c}:${p}`).sort().join(), b = Object.entries(s.placings || {}).map(([c, p]) => `${c}:${p}`).sort().join();
   return a === b;
 }
 // barevné značky (jen v telefonu porotce)
@@ -424,8 +448,9 @@ function render() {
       ${r.dances.map(d => DANCES[d]).join(", ")} · ${pary(r.couples.length)}${r.groups?.length > 1 ? ` · ${r.groups.length} skupiny` : ""}
       <button class="btn primary" id="readyBtn">Jsem připraven/a</button></div>`;
     $("readyBtn").onclick = () => {
+      if (me.readyFor === r.id) return;
       me = { ...me, readyFor: r.id };
-      if (!sim) setDoc(judgeRef(), { readyFor: r.id, readyAt: serverTimestamp(), lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
+      if (!sim) setDoc(judgeRef(), { readyFor: r.id, readyAt: serverTimestamp(), lastSeen: serverTimestamp() }, { merge: true }).catch(e => toast("Potvrzení se neodeslalo", errText(e)));
       navigator.vibrate?.(30); render();
     };
     return;
@@ -579,9 +604,13 @@ $("clearBtn").onclick = () => {
   dr.dirty = true; selC = selP = null; render();
 };
 
+let sending = false;
 $("sendBtn").onclick = () => {
-  const r = rounds.get(rid), dr = draftFor(r, dance);
-  if (r.status !== "open" || !isValid(r, dr)) return;
+  if (sending) return;
+  const r = rounds.get(rid); if (!r) return;
+  const dr = draftFor(r, dance);
+  if (r.status !== "open" || !isValid(r, dr) || sameAsSheet(r, dr, sheets.get(dance)?.data)) return;
+  sending = true; $("sendBtn").disabled = true; setTimeout(() => { sending = false; render(); }, 600);
   const prev = sheets.get(dance)?.data;
   const data = { judge, dance, type: r.type, uid: auth.currentUser?.uid || null, clientAt: Date.now(), sentAt: serverTimestamp(), source: "app", rev: (prev?.rev || 0) + 1 };
   if (r.type === "prelim") data.marks = [...dr.marks].sort((a, b) => a - b);
@@ -590,7 +619,7 @@ $("sendBtn").onclick = () => {
     const d0 = dance; sheets.set(d0, { data, pending: true });
     setTimeout(() => { const x = sheets.get(d0); if (x) x.pending = false; render(); }, 700);
   } else setDoc(doc(db, "competitions", comp, "rounds", rid, "sheets", `${dance}_${judge}`), data)
-    .catch(e => { $("status").innerHTML = `<span class="dot bad"></span> Chyba: ${esc(e.code || e.message)}`; });
+    .catch(e => { toast("Lístek se neodeslal", errText(e)); $("status").innerHTML = `<span class="dot bad"></span> Neodesláno – zkuste znovu nebo použijte QR`; dr.dirty = true; });
   dr.dirty = false; navigator.vibrate?.(30);
   if (settings().autoNext) {
     const next = r.dances.find(d => d !== dance && !sheets.has(d));
@@ -606,7 +635,8 @@ function qrPayload(r) {
     const dr = draftFor(r, d), s = sheets.get(d)?.data;
     let nums = null;
     if (isValid(r, dr)) nums = r.type === "prelim" ? [...dr.marks].sort((a, b) => a - b) : Object.entries(dr.assign).sort((a, b) => a[1] - b[1]).map(([c]) => +c);
-    else if (s) nums = r.type === "prelim" ? s.marks : Object.entries(s.placings).sort((a, b) => a[1] - b[1]).map(([c]) => +c);
+    else if (s && Array.isArray(s.marks) && r.type === "prelim") nums = s.marks;
+    else if (s && s.placings && r.type === "final") nums = Object.entries(s.placings).sort((a, b) => a[1] - b[1]).map(([c]) => +c);
     if (!nums) return null;
     parts.push(`${d}=${nums.join(".")}`);
   }
@@ -618,11 +648,17 @@ function qrSvg(text) {
   let path = ""; for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (qr.isDark(y, x)) path += `M${x + q},${y + q}h1v1h-1z`;
   return `<svg viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${path}" fill="#000"/></svg>`;
 }
-$("qrBtn").onclick = () => {
+function loadQrLib() {
+  if (window.qrcode) return Promise.resolve();
+  return new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js";
+    sc.onload = () => window.qrcode ? res() : rej(new Error("Knihovna QR se nenačetla.")); sc.onerror = () => { sc.remove(); rej(new Error("Knihovna QR se nenačetla – chybí internet.")); }; document.head.appendChild(sc); });
+}
+$("qrBtn").onclick = async () => {
   const r = rounds.get(rid); const text = r && qrPayload(r);
   if (!text) return;
+  try { await loadQrLib(); } catch {}
   let inner;
-  try { inner = window.qrcode ? `<div class="qrwrap">${qrSvg(text)}</div>` : `<p style="color:#ff8a8d">Knihovna QR se nenačetla. Otevřete aplikaci jednou s internetem.</p>`; }
+  try { inner = window.qrcode ? `<div class="qrwrap">${qrSvg(text)}</div>` : `<p style="color:#ff8a8d">Knihovna QR se nenačetla. Připojte se na chvíli k internetu a zkuste to znovu.</p>`; }
   catch (e) { inner = `<p style="color:#ff8a8d">QR se nepodařilo vytvořit: ${esc(e.message)}</p>`; }
   $("overlay").innerHTML = `<div class="overlay"><div class="sheet"><h3>Porotce ${judge} · ${esc(titleOf(r))}</h3>
     <p>Celé kolo (${r.dances.map(d => DANCES[d]).join(", ")}). Ukažte kód sčitateli, nebo ho vyfoťte a fotku mu pošlete.</p>
