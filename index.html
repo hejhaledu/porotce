@@ -165,7 +165,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <button id="hGo" class="btn primary" style="width:100%;height:52px;margin-top:22px" disabled>Pokračovat</button>
   <label style="margin-top:30px">Simulátor – vyzkoušejte si hodnocení bez odesílání</label>
   <div class="simbtns"><button class="btn" data-sim="prelim">1. kolo</button><button class="btn" data-sim="final">Finále</button></div>
-  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026</div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v3.0</div>
 </div>
 
 <div id="list" class="setup home hidden">
@@ -173,7 +173,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <div class="kicker" style="margin-top:18px">Porotce <span id="lJ"></span></div>
   <h1>Vaše soutěže</h1>
   <div id="compList"></div>
-  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026</div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v3.0</div>
 </div>
 
 <div id="app" class="hidden">
@@ -435,7 +435,7 @@ function render() {
     const info = sim ? "" : others.length
       ? `<div style="margin-top:18px;font-size:13px;line-height:1.6">Právě probíhá:<br>${others.map(x => `<b style="color:var(--text)">${esc(titleOf(x))}</b> – hodnotí ${(x.judges || []).join(", ")}`).join("<br>")}<br>Porotce ${judge} v tomto kole není. Pokud to nesedí, ozvěte se sčitateli.</div>`
       : `<div style="margin-top:18px;font-size:13px">Sčitatel zatím nespustil žádné kolo.</div>`;
-    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}<div class="credit" style="margin-top:40px">ArtimoCounter, created by Martin Hejhal, 2026</div></div>`;
+    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}<div class="credit" style="margin-top:40px">ArtimoCounter, created by Martin Hejhal, 2026, v3.0</div></div>`;
     return;
   }
   $("hRound").textContent = titleOf(r);
