@@ -98,6 +98,9 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:ma
 .couple.mg::after{background:var(--green)}
 .couple.mr::after{background:var(--red)}
 .couple:disabled{opacity:.5}
+.couple.wd{opacity:.32;text-decoration:line-through;pointer-events:none}
+.couple.wd::after{content:"odstoupil";position:absolute;bottom:3px;left:0;right:0;font-size:9px;font-weight:600;text-decoration:none;letter-spacing:.02em}
+.fbtn .wdl{position:absolute;bottom:2px;left:0;right:0;font-size:9px;font-weight:600;color:#ffb84d}
 /* finále */
 .fin{position:relative;display:grid;grid-template-columns:1fr 1fr;column-gap:34%;height:100%;min-height:300px}
 .fcol{display:grid;gap:8px}
@@ -165,7 +168,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <button id="hGo" class="btn primary" style="width:100%;height:52px;margin-top:22px" disabled>Pokračovat</button>
   <label style="margin-top:30px">Simulátor – vyzkoušejte si hodnocení bez odesílání</label>
   <div class="simbtns"><button class="btn" data-sim="prelim">1. kolo</button><button class="btn" data-sim="final">Finále</button></div>
-  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v4.0</div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v4.1</div>
 </div>
 
 <div id="list" class="setup home hidden">
@@ -173,7 +176,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <div class="kicker" style="margin-top:18px">Porotce <span id="lJ"></span></div>
   <h1>Vaše soutěže</h1>
   <div id="compList"></div>
-  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v4.0</div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v4.1</div>
 </div>
 
 <div id="app" class="hidden">
@@ -226,7 +229,7 @@ const DANCES = { W:"Waltz", T:"Tango", V:"Valčík", F:"Slowfox", Q:"Quickstep",
 const DEFAULTS = { requireReady: true, qr: true, colorMarks: true, autoNext: true };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-const APP_VER = "v4.0";
+const APP_VER = "v4.1";
 const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 const pary = n => `${n} ${n === 1 ? "pár" : n >= 2 && n <= 4 ? "páry" : "párů"}`;
 const titleOf = r => r.category ? `${r.category} · ${r.label}` : (r.name || "");
@@ -347,6 +350,7 @@ async function claimLetter(force) {
     try {
       const snap = await Promise.race([getDoc(judgeRef()), new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 4000))]);
       const d = snap.data();
+      if (d?.devices?.[deviceId]?.kicked) { kicked = true; holder = false; return "kicked"; }
       // nezávisle na hodinách telefonu: drží-li písmeno jiné zařízení, vždy se zeptáme
       if (d?.deviceId && d.deviceId !== deviceId) {
         const ok = await askTakeover();
@@ -357,8 +361,43 @@ async function claimLetter(force) {
   }
   holder = true;
   if (force) { diagInc("takeovers"); diagEvent("převzetí písmene"); }
-  setDoc(judgeRef(), { letter: judge, deviceId, claimedAt: serverTimestamp(), lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
+  setDoc(judgeRef(), { letter: judge, deviceId, claimedAt: serverTimestamp(), lastSeen: serverTimestamp(), devices: { [deviceId]: devEntry() } }, { merge: true }).catch(() => {});
   return true;
+}
+// ----- správa zařízení (v4.1): každý telefon hlásí sčitateli, kde je -----
+let kicked = false, lastPhase = "", phaseTimer = null;
+function deviceModel() {
+  const ua = navigator.userAgent;
+  let m = ua.match(/iPhone OS (\d+)/); if (m) return `iPhone · iOS ${m[1]}`;
+  m = ua.match(/iPad|Macintosh.*Mobile/); if (m || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua))) return "iPad";
+  m = ua.match(/Android [\d.]+; ([^;)]+?)(?: Build|\))/); if (m) return m[1].trim().slice(0, 30);
+  if (/Android/.test(ua)) return "Android";
+  const br = /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "Prohlížeč";
+  return `${br} · ${/Mac/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Windows" : /Linux/.test(ua) ? "Linux" : "počítač"}`;
+}
+function phaseText() {
+  if (kicked) return "odpojeno sčitatelem";
+  if (!holder) return "záložní – písmeno drží jiné zařízení";
+  if (!$("overlay").innerHTML && document.visibilityState !== "visible") return "na pozadí";
+  const r = rounds.get(rid);
+  if (!r) return "čeká na kolo";
+  if (r.status !== "open") return `${titleOf(r)} · kolo uzavřeno`;
+  if (settings().requireReady && me.readyFor !== r.id) return `${titleOf(r)} · nepotvrdil připravenost`;
+  const sent = r.dances.filter(d => sheets.get(d)).length;
+  return `${titleOf(r)} · ${DANCES[dance] || ""} · odesláno ${sent}/${r.dances.length}${$("overlay").innerHTML.includes("qrwrap") ? " · ukazuje QR" : ""}`;
+}
+function devEntry() { return { at: serverTimestamp(), phase: phaseText(), model: deviceModel(), ver: APP_VER }; }
+function phaseTick() {
+  if (sim || !comp || !judge || $("app").classList.contains("hidden")) return;
+  const ph = phaseText(); if (ph === lastPhase) return;
+  lastPhase = ph; clearTimeout(phaseTimer);
+  phaseTimer = setTimeout(() => { if (online && !offStart) setDoc(judgeRef(), { devices: { [deviceId]: devEntry() } }, { merge: true }).catch(() => {}); }, 4000);
+}
+function showKicked() {
+  $("tabs").classList.add("hidden"); $("footer").classList.add("hidden"); $("roundBar").classList.add("hidden");
+  $("content").innerHTML = `<div class="center"><h2>Zařízení bylo odpojeno</h2>Sčitatel odpojil toto zařízení od hodnocení porotce <b style="color:var(--text)">${judge}</b>.<br>Pokud jde o omyl, požádejte sčitatele, aby zařízení znovu povolil (Podpora → Správa zařízení).
+    <button class="btn" id="kickHome">Zpět na úvod</button></div>`;
+  $("kickHome").onclick = () => { location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : ""); };
 }
 function askTakeover() {
   return new Promise(res => {
@@ -418,11 +457,14 @@ function trackConn(connected) {
 }
 const judgeRef = () => doc(db, "competitions", comp, "judges", judge);
 // Tep jednou za minutu a jen se signálem (bez signálu by se zbytečně řadil do fronty).
+// Záložní zařízení (písmeno drží jiné) hlásí jen svůj záznam v seznamu zařízení.
 function beat() {
   if (document.visibilityState !== "visible") return;
-  if (!holder) return;                // převzaté jiným zařízením – nebojovat o písmeno
-  if (!online || offStart) return;
-  setDoc(judgeRef(), { letter: judge, uid: auth.currentUser?.uid || null, lastSeen: serverTimestamp(), ver: APP_VER, diag }, { merge: true }).catch(() => {});
+  if (!online || offStart || kicked) return;
+  lastPhase = phaseText();
+  const dev = { devices: { [deviceId]: devEntry() } };
+  if (!holder) { setDoc(judgeRef(), dev, { merge: true }).catch(() => {}); return; }
+  setDoc(judgeRef(), { letter: judge, uid: auth.currentUser?.uid || null, lastSeen: serverTimestamp(), ver: APP_VER, diag, ...dev }, { merge: true }).catch(() => {});
 }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { requestWakeLock(); beat(); } });
 
@@ -432,8 +474,12 @@ function listen() {
   let meSig = null;
   onSnapshot(judgeRef(), snap => {
     liveMe = snap.data() || {};
-    holder = !liveMe.deviceId || liveMe.deviceId === deviceId;
-    const sig = JSON.stringify([holder, liveMe.readyFor ?? null]);      // tep (lastSeen) nepřekresluje obrazovku
+    const wasKicked = kicked;
+    kicked = liveMe.devices?.[deviceId]?.kicked === true;
+    holder = !kicked && (!liveMe.deviceId || liveMe.deviceId === deviceId);
+    if (kicked && !wasKicked) { diagEvent("odpojeno sčitatelem"); navigator.vibrate?.([300, 100, 300]); }
+    if (!kicked && wasKicked) { toast("Zařízení povoleno", "Sčitatel vás znovu připojil."); lastPhase = ""; }
+    const sig = JSON.stringify([holder, kicked, liveMe.readyFor ?? null]);      // tep (lastSeen) nepřekresluje obrazovku
     if (!sim) { me = liveMe; if (sig !== meSig) { meSig = sig; render(); } }
   });
   onSnapshot(doc(db, "competitions", comp), snap => {
@@ -498,6 +544,8 @@ function sameAsSheet(r, dr, s) {
   const a = Object.entries(dr.assign).map(([c, p]) => `${c}:${p}`).sort().join(), b = Object.entries(s.placings || {}).map(([c, p]) => `${c}:${p}`).sort().join();
   return a === b;
 }
+// odstoupení (v4.1): withdrawn[<kategorie>][<číslo>] v dokumentu soutěže
+const isWd = (r, c) => !sim && !!compDoc.withdrawn?.[r.categoryId]?.[String(c)];
 // barevné značky (jen v telefonu porotce)
 const markKey = () => `ac_mk_${sim ? "sim" : comp}_${rid}_${dance}`;
 const getMarks = () => { try { return JSON.parse(store.get(markKey()) || "{}"); } catch { return {}; } };
@@ -511,7 +559,9 @@ function render() {
   $("roundBar").classList.toggle("hidden", openRounds().length < 2);
   $("roundSel").innerHTML = list.filter(x => x.status === "open" || x.id === rid).map(x => `<option value="${x.id}" ${x.id === rid ? "selected" : ""}>${esc(titleOf(x))}${x.status !== "open" ? " (uzavřeno)" : ""}</option>`).join("");
   $("readyRow").classList.toggle("hidden", !(r && r.status === "open" && me.readyFor === r.id));
+  if (!sim && kicked) { showKicked(); phaseTick(); return; }
   if (!sim && !holder) {
+    phaseTick();
     $("tabs").classList.add("hidden"); $("footer").classList.add("hidden"); $("roundBar").classList.add("hidden");
     $("content").innerHTML = `<div class="center"><h2>Převzato jiným zařízením</h2>Hodnocení porotce <b style="color:var(--text)">${judge}</b> teď probíhá na jiném telefonu nebo tabletu. Z tohoto zařízení nelze odesílat.
       <button class="btn primary" id="takeBack">Převzít zpět sem</button></div>`;
@@ -525,7 +575,8 @@ function render() {
     const info = sim ? "" : others.length
       ? `<div style="margin-top:18px;font-size:13px;line-height:1.6">Právě probíhá:<br>${others.map(x => `<b style="color:var(--text)">${esc(titleOf(x))}</b> – hodnotí ${(x.judges || []).join(", ")}`).join("<br>")}<br>Porotce ${judge} v tomto kole není. Pokud to nesedí, ozvěte se sčitateli.</div>`
       : `<div style="margin-top:18px;font-size:13px">Sčitatel zatím nespustil žádné kolo.</div>`;
-    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}<div class="credit" style="margin-top:40px">ArtimoCounter, created by Martin Hejhal, 2026, v4.0</div></div>`;
+    phaseTick();
+    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}<div class="credit" style="margin-top:40px">ArtimoCounter, created by Martin Hejhal, 2026, v4.1</div></div>`;
     return;
   }
   $("hRound").textContent = titleOf(r);
@@ -574,12 +625,15 @@ function render() {
   $("status").innerHTML = `<span style="display:inline-flex;align-items:center;gap:7px">${stt}</span>`;
   $("qrBtn").classList.toggle("hidden", !st.qr);
   $("qrBtn").disabled = !qrPayload(r) && !qrBlocked(r);
+  phaseTick();
 }
 
 function renderPrelim(r, dr, banner, locked, st) {
   const marks = st.colorMarks ? getMarks() : {};
   const groups = r.groups?.length ? r.groups : [{ n: 1, couples: r.couples }];
-  const btn = c => `<button class="couple ${dr.marks.has(c) ? "on" : ""} ${marks[c] === "g" ? "mg" : marks[c] === "r" ? "mr" : ""}" data-c="${c}" ${locked ? "disabled" : ""}>${c}</button>`;
+  // odstoupivší: nejde označit; neodeslaný křížek u něj se zruší
+  for (const c of [...dr.marks]) if (isWd(r, c) && !locked) { dr.marks.delete(c); dr.dirty = true; }
+  const btn = c => isWd(r, c) ? `<button class="couple wd" disabled>${c}</button>` : `<button class="couple ${dr.marks.has(c) ? "on" : ""} ${marks[c] === "g" ? "mg" : marks[c] === "r" ? "mr" : ""}" data-c="${c}" ${locked ? "disabled" : ""}>${c}</button>`;
   $("content").innerHTML = banner +
     groups.map(g => `${groups.length > 1 ? `<div class="ghead"><span class="gc">${g.n}. skupina</span> ${g.couples.length}</div>` : ""}<div class="grid">${g.couples.map(btn).join("")}</div>`).join("");
   fitPrelim();
@@ -603,7 +657,7 @@ function renderFinal(r, dr, banner, locked, st) {
   const medal = p => p >= 1 && p <= 3 ? `<span class="medal m${p}"></span>` : "";
   $("content").innerHTML = banner +
     `<div class="fin" id="fin">
-      <div class="fcol" style="grid-template-rows:repeat(${N},1fr)">${r.couples.map(c => `<button class="fbtn ${dr.assign[c] ? "linked" : ""} ${selC === c ? "sel" : ""}" data-fc="${c}" ${locked ? "disabled" : ""}>${medal(dr.assign[c])}${c}${dr.assign[c] ? `<span class="sm">${dr.assign[c]}.</span>` : ""}</button>`).join("")}</div>
+      <div class="fcol" style="grid-template-rows:repeat(${N},1fr)">${r.couples.map(c => `<button class="fbtn ${dr.assign[c] ? "linked" : ""} ${selC === c ? "sel" : ""}" data-fc="${c}" ${locked ? "disabled" : ""}>${medal(dr.assign[c])}${c}${dr.assign[c] ? `<span class="sm">${dr.assign[c]}.</span>` : ""}${isWd(r, c) ? `<span class="wdl">odstoupil</span>` : ""}</button>`).join("")}</div>
       <div class="fcol" style="grid-template-rows:repeat(${N},1fr)">${Array.from({ length: N }, (_, i) => i + 1).map(p => `<button class="fbtn pl ${byPlace[p] ? "linked" : ""} ${selP === p ? "sel" : ""}" data-fp="${p}" ${locked ? "disabled" : ""}>${medal(p)}${p}.</button>`).join("")}</div>
       <svg id="lines"></svg></div>`;
   fitFinal(N);
