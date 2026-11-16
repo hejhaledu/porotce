@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- ArtimoCounter – Porotce – verze v5.2 – sestaveno 2026-11-16 – created by Martin Hejhal -->
 <html lang="cs">
 <head>
 <meta charset="utf-8">
@@ -70,6 +71,8 @@ button,input,select{font-family:inherit;color:inherit}
 .in:focus{border-color:var(--blue)}
 select.in option{background:#11154a}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--gray);display:inline-block;flex:0 0 auto}
+.tab.lockd{opacity:.55}.tab.lockd:disabled{cursor:not-allowed}
+.banner.sentlock{background:rgba(245,211,168,.1);color:var(--accent);border-color:rgba(245,211,168,.3)}
 .dot.ok{background:var(--green)}.dot.wait{background:var(--orange)}.dot.bad{background:var(--red)}.dot.saved{background:var(--blue)}
 
 #app{display:flex;flex-direction:column;height:100%}
@@ -102,21 +105,23 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:ma
 .couple.wd::after{content:"odstoupil";position:absolute;bottom:3px;left:0;right:0;font-size:9px;font-weight:600;text-decoration:none;letter-spacing:.02em}
 .fbtn .wdl{position:absolute;bottom:2px;left:0;right:0;font-size:9px;font-weight:600;color:#ffb84d}
 /* finále */
-.fin{position:relative;display:grid;grid-template-columns:1fr 1fr;column-gap:34%;height:100%;min-height:300px}
+.fin{position:relative;display:grid;grid-template-columns:1.25fr 1fr;column-gap:26%;height:100%;min-height:300px}
 .fcol{display:grid;gap:8px}
 .fbtn{position:relative;border-radius:14px;border:1px solid var(--stroke);background:var(--glass);font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;min-height:42px;box-shadow:0 2px 8px rgba(0,0,0,.2);transition:background .12s,box-shadow .12s}
 .fbtn.pl{font-size:19px;color:var(--text2)}
 .fbtn.linked{background:var(--glass3);color:var(--text)}
 .fbtn.pl.linked{background:rgba(245,211,168,.16);color:var(--accent);border-color:rgba(245,211,168,.35)}
 .fbtn.sel{box-shadow:0 0 0 3px var(--blue);background:rgba(91,140,255,.22)}
-.fbtn .sm{position:absolute;top:4px;right:7px;font-size:12px;font-weight:700;color:var(--accent)}
+.fcell{display:flex;align-items:stretch;gap:8px;min-height:0}
+.fcell .fbtn{flex:1 1 auto;min-width:0}
+.fpl{flex:0 0 2.3em;display:flex;align-items:center;justify-content:flex-start;font-size:24px;font-weight:700;color:var(--accent);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
 .fbtn:disabled{opacity:.5}
 .fin svg{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-.fin .ln{fill:none;stroke:url(#lnGrad);stroke-width:2.2;stroke-linecap:round}
-.fin .ln-glow{fill:none;stroke:rgba(245,211,168,.18);stroke-width:7;stroke-linecap:round}
+.fin .ln{fill:none;stroke:url(#lnGrad);stroke-width:2.2;stroke-linecap:round;opacity:.5}
+.fin .ln-glow{fill:none;stroke:rgba(245,211,168,.18);stroke-width:7;stroke-linecap:round;opacity:.5}
 .fin .ln.hl{stroke:var(--blue);stroke-width:2.8}
 .fin .ln-glow.hl{stroke:rgba(91,140,255,.28)}
-.fin .end{fill:var(--accent);stroke:#05072b;stroke-width:2}
+.fin .end{fill:var(--accent);stroke:#05072b;stroke-width:2;opacity:.5}
 .fin .end.hl{fill:var(--blue)}
 .fin svg .new{animation:lnIn .25s ease-out}
 @keyframes lnIn{from{opacity:0}}
@@ -168,7 +173,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <button id="hGo" class="btn primary" style="width:100%;height:52px;margin-top:22px" disabled>Pokračovat</button>
   <label style="margin-top:30px">Simulátor – vyzkoušejte si hodnocení bez odesílání</label>
   <div class="simbtns"><button class="btn" data-sim="prelim">1. kolo</button><button class="btn" data-sim="final">Finále</button></div>
-  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v5.0</div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v5.2</div>
 </div>
 
 <div id="list" class="setup home hidden">
@@ -176,7 +181,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <div class="kicker" style="margin-top:18px">Porotce <span id="lJ"></span></div>
   <h1>Vaše akce</h1>
   <div id="compList"></div>
-  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v5.0</div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v5.2</div>
 </div>
 
 <div id="app" class="hidden">
@@ -229,7 +234,7 @@ const DANCES = { W:"Waltz", T:"Tango", V:"Valčík", F:"Slowfox", Q:"Quickstep",
 const DEFAULTS = { requireReady: true, qr: true, colorMarks: true, autoNext: true };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-const APP_VER = "v5.0";
+const APP_VER = "v5.2";
 const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 const pary = n => `${n} ${n === 1 ? "pár" : n >= 2 && n <= 4 ? "páry" : "párů"}`;
 const titleOf = r => r.category ? `${r.category} · ${r.label}` : (r.name || "");
@@ -264,7 +269,7 @@ let sheets = new Map();
 const drafts = new Map();
 let unsubSheets = null;
 let online = navigator.onLine, serverConnected = false;
-let selC = null, selP = null;            // finále: vybraný pár / místo
+let selC = null, selP = null, justSent = false;            // finále: vybraný pár / místo
 const settings = () => DEFAULTS;
 let sim = null;                          // simulátor: { from: "home"|"live" }
 let liveRounds = new Map(), liveMe = {}, allRounds = [];
@@ -298,11 +303,11 @@ function renderHome() {
   $("hLetters").innerHTML = letters.map(l => named
     ? `<button data-l="${l}" class="${l === judge ? "on" : ""}"><i>${l}</i><span>${esc(f.jury[l] || "Porotce " + l)}</span></button>`
     : `<button data-l="${l}" class="${l === judge ? "on" : ""}">${l}</button>`).join("")
-    + (named ? `<button data-all="1" style="grid-column:1/-1;height:40px;justify-content:center;color:var(--text2)">Jiné písmeno…</button>` : "");
+    + (named ? `<button data-all="1" style="grid-column:1/-1;height:40px;justify-content:center;color:var(--text2)">Jiné písmeno</button>` : "");
   $("hGo").disabled = !judge;
 }
 let allLetters = false;
-$("hLetters").onclick = e => { if (e.target.closest("[data-all]")) { allLetters = true; renderHome(); return; } const b = e.target.closest("[data-l]"); if (b) { judge = b.dataset.l; renderHome(); } };
+$("hLetters").onclick = e => { if (e.target.closest("[data-all]")) { allLetters = true; renderHome(); return; } const b = e.target.closest("[data-l]"); if (b) { judge = b.dataset.l; resumeTried = true; renderHome(); } };
 $("hGo").onclick = () => { if (!judge) return; store.set("ac_j_judge", judge); showScreen("list"); renderList(); };
 $("lBack").onclick = () => showHome();
 
@@ -329,22 +334,33 @@ function renderList() {
 }
 $("compList").onclick = e => { const b = e.target.closest("[data-comp]"); if (b) { comp = b.dataset.comp; start(); } };
 
-let compsLoaded = false, compsListening = false;
+let compsLoaded = false, compsListening = false, resumeTried = false;
 function bootApp() {
   showHome();
   onAuthStateChanged(auth, user => {
     if (!user || compsListening) return; compsListening = true;
     onSnapshot(collection(db, "competitions"), snap => {
       comps = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }])); compsLoaded = true;
+      // v5.2: po obnovení stránky (i uspání karty) se porotce vrátí rovnou do rozdělané akce
+      if (!resumeTried && screen === "home" && !sim) {
+        resumeTried = true;
+        try {
+          const rs = JSON.parse(store.get("ac_j_resume") || "null"), c = rs && comps.get(rs.c);
+          if (c && rs.j === judge && Date.now() - rs.t < 12 * 3600000 && compState(c) !== "done" && juryLetters(c).includes(judge) && (!linkComp || linkComp === rs.c)) { comp = rs.c; start(); return; }
+        } catch {}
+      }
       if (screen === "home") renderHome(); if (screen === "list") renderList();
     }, err => { $("homeSub").textContent = "Akce se nenačetly: " + errText(err); toast("Akce se nenačetly", errText(err)); });
   });
-  signInAnonymously(auth).catch(e => { $("homeSub").textContent = "Přihlášení selhalo: " + e.code; });
+  const trySign = () => signInAnonymously(auth).catch(e => { $("homeSub").textContent = "Přihlášení selhalo, zkouším znovu (" + e.code + ")"; setTimeout(trySign, 8000); });
+  trySign();
+  // v5.2: start bez internetu – funguje, když je vedle index.html nahraný soubor sw.js
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 }
 
 // Každý telefon má své ID. Písmeno porotce „drží“ jen jedno zařízení; druhé se musí výslovně převzít.
 const deviceId = (() => { let d = store.get("ac_device"); if (!d) { d = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store.set("ac_device", d); } return d; })();
-let holder = true;
+let holder = true, letterFree = false, compGone = false;
 async function claimLetter(force) {
   if (!force) {
     try {
@@ -355,7 +371,7 @@ async function claimLetter(force) {
       if (d?.deviceId && d.deviceId !== deviceId) {
         const ok = await askTakeover();
         if (ok) { diagInc("takeovers"); diagEvent("převzetí písmene"); }
-        if (!ok) { location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : ""); return false; }
+        if (!ok) { store.set("ac_j_resume", ""); location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : ""); return false; }
       }
     } catch {}                         // bez spojení: převezmeme (zápis se odešle po připojení)
   }
@@ -377,7 +393,7 @@ function deviceModel() {
 }
 function phaseText() {
   if (kicked) return "odpojeno sčitatelem";
-  if (!holder) return "záložní – písmeno drží jiné zařízení";
+  if (!holder) return letterFree ? "čeká na převzetí písmene" : "záložní – písmeno drží jiné zařízení";
   if (!$("overlay").innerHTML && document.visibilityState !== "visible") return "na pozadí";
   const r = rounds.get(rid);
   if (!r) return "čeká na kolo";
@@ -388,16 +404,16 @@ function phaseText() {
 }
 function devEntry() { return { at: serverTimestamp(), phase: phaseText(), model: deviceModel(), ver: APP_VER }; }
 function phaseTick() {
-  if (sim || !comp || !judge || $("app").classList.contains("hidden")) return;
+  if (sim || !comp || !judge || compGone || $("app").classList.contains("hidden")) return;
   const ph = phaseText(); if (ph === lastPhase) return;
   lastPhase = ph; clearTimeout(phaseTimer);
-  phaseTimer = setTimeout(() => { if (online && !offStart) setDoc(judgeRef(), { devices: { [deviceId]: devEntry() } }, { merge: true }).catch(() => {}); }, 4000);
+  phaseTimer = setTimeout(() => { if (online && !offStart && !compGone) setDoc(judgeRef(), { devices: { [deviceId]: devEntry() } }, { merge: true }).catch(() => {}); }, 4000);
 }
 function showKicked() {
   $("tabs").classList.add("hidden"); $("footer").classList.add("hidden"); $("roundBar").classList.add("hidden");
   $("content").innerHTML = `<div class="center"><h2>Zařízení bylo odpojeno</h2>Sčitatel odpojil toto zařízení od hodnocení porotce <b style="color:var(--text)">${judge}</b>.<br>Pokud jde o omyl, požádejte sčitatele, aby zařízení znovu povolil (Podpora → Správa zařízení).
     <button class="btn" id="kickHome">Zpět na úvod</button></div>`;
-  $("kickHome").onclick = () => { location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : ""); };
+  $("kickHome").onclick = () => { store.set("ac_j_resume", ""); location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : ""); };
 }
 function askTakeover() {
   return new Promise(res => {
@@ -412,6 +428,7 @@ function askTakeover() {
 let liveStarted = false;
 function start() {
   store.set("ac_j_judge", judge);
+  store.set("ac_j_resume", JSON.stringify({ c: comp, j: judge, t: Date.now() }));
   showScreen("app");
   $("hJudge").textContent = judge;
   $("hJudge").onclick = goHome;
@@ -460,7 +477,7 @@ const judgeRef = () => doc(db, "competitions", comp, "judges", judge);
 // Záložní zařízení (písmeno drží jiné) hlásí jen svůj záznam v seznamu zařízení.
 function beat() {
   if (document.visibilityState !== "visible") return;
-  if (!online || offStart || kicked) return;
+  if (!online || offStart || kicked || compGone) return;
   lastPhase = phaseText();
   const dev = { devices: { [deviceId]: devEntry() } };
   if (!holder) { setDoc(judgeRef(), dev, { merge: true }).catch(() => {}); return; }
@@ -470,24 +487,28 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 
 let roundsSig = null, seenOpen = null;
 function listen() {
+  loadDrafts();
   diagReady(); beat(); setInterval(beat, 60000);
   let meSig = null;
   onSnapshot(judgeRef(), snap => {
     liveMe = snap.data() || {};
     const wasKicked = kicked;
     kicked = liveMe.devices?.[deviceId]?.kicked === true;
-    holder = !kicked && (!liveMe.deviceId || liveMe.deviceId === deviceId);
+    // Hodnotí jen zařízení, které písmeno skutečně drží. Uvolněné písmeno (sčitatel odpojil držitele) se musí výslovně převzít.
+    holder = !kicked && liveMe.deviceId === deviceId;
+    letterFree = !kicked && !liveMe.deviceId;
     if (kicked && !wasKicked) { diagEvent("odpojeno sčitatelem"); navigator.vibrate?.([300, 100, 300]); }
     if (!kicked && wasKicked) { toast("Zařízení povoleno", "Sčitatel vás znovu připojil."); lastPhase = ""; }
-    const sig = JSON.stringify([holder, kicked, liveMe.readyFor ?? null]);      // tep (lastSeen) nepřekresluje obrazovku
+    const sig = JSON.stringify([holder, kicked, letterFree, liveMe.readyFor ?? null]);      // tep (lastSeen) nepřekresluje obrazovku
     if (!sim) { me = liveMe; if (sig !== meSig) { meSig = sig; render(); } }
-  });
+  }, err => toast("Stav porotce se nenačetl", errText(err)));
   onSnapshot(doc(db, "competitions", comp), snap => {
+    compGone = !snap.exists() && snap.metadata?.fromCache === false;       // smazaná akce: nic dalšího se do ní nezapisuje
     compDoc = snap.data() || {};
     const name = compDoc.jury?.[judge];
     if (!sim) $("hSub").textContent = [name, compDoc.name || comp].filter(Boolean).join(" · ");
     render();
-  });
+  }, err => toast("Akce se nenačetla", errText(err)));
   onSnapshot(collection(db, "competitions", comp, "rounds"), { includeMetadataChanges: true }, snap => {
     serverConnected = !snap.metadata.fromCache; updateConn(); trackConn(serverConnected);
     const fresh = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(validRound);
@@ -522,8 +543,42 @@ function selectRound(id) {
 $("roundSel").onchange = e => selectRound(e.target.value);
 
 // ===================== KONCEPT HODNOCENÍ =====================
+// v5.2: rozpracované hodnocení se průběžně ukládá do telefonu – obnovení stránky ho nesmaže.
+const draftStoreKey = () => `ac_dr_${comp}_${judge}`;
+let draftSig = "";
+function saveDrafts() {
+  if (sim || !comp || !judge || !draftsLoaded) return;
+  const o = {};
+  for (const [k, d] of drafts) {
+    if (!d.dirty || k.startsWith("sim-")) continue;
+    const rr = liveRounds.get(k.split("|")[0]);
+    if (liveRounds.size && (!rr || rr.status !== "open")) continue;       // kolo skončilo – koncept už není k ničemu
+    o[k] = d.marks ? { m: [...d.marks] } : { a: d.assign };
+  }
+  const sig = JSON.stringify(o);
+  if (sig !== draftSig) { draftSig = sig; store.set(draftStoreKey(), sig); }
+}
+let draftsLoaded = false;
+function loadDrafts() {
+  try {
+    const o = JSON.parse(store.get(draftStoreKey()) || "{}") || {};
+    for (const [k, v] of Object.entries(o)) {
+      if (drafts.has(k) || !v) continue;
+      drafts.set(k, Array.isArray(v.m) ? { dirty: true, stored: true, marks: new Set(v.m.filter(Number.isInteger)) }
+        : { dirty: true, stored: true, assign: v.a && typeof v.a === "object" ? v.a : {} });
+    }
+  } catch {}
+  draftsLoaded = true;
+}
 function draftFor(r, d) {
   const key = `${r.id}|${d}`;
+  const st0 = drafts.get(key);
+  if (st0?.stored) {                                   // koncept z úložiště: jen páry a místa, která do kola patří
+    delete st0.stored;
+    if (r.type === "prelim" && st0.marks) st0.marks = new Set([...st0.marks].filter(c => r.couples.includes(c)));
+    else if (r.type === "final" && st0.assign) st0.assign = Object.fromEntries(Object.entries(st0.assign).filter(([c, p]) => r.couples.includes(+c) && Number.isInteger(p) && p >= 1 && p <= r.couples.length));
+    else drafts.delete(key);
+  }
   if (!drafts.has(key) || !drafts.get(key).dirty) {
     const s = sheets.get(d)?.data;
     drafts.set(key, r.type === "prelim"
@@ -544,6 +599,9 @@ function sameAsSheet(r, dr, s) {
   const a = Object.entries(dr.assign).map(([c, p]) => `${c}:${p}`).sort().join(), b = Object.entries(s.placings || {}).map(([c, p]) => `${c}:${p}`).sort().join();
   return a === b;
 }
+// zamykání tance po odeslání (v5.1): globální přepínač sčitatele compDoc.lockSent
+const lockSent = () => !sim && !!compDoc.lockSent;
+const danceLocked = (r, d) => lockSent() && sheets.has(d) && sheets.get(d).data?.source !== "manual";
 // odstoupení (v4.1): withdrawn[<soutěže>][<číslo>] v dokumentu akce
 const isWd = (r, c) => !sim && !!compDoc.withdrawn?.[r.categoryId]?.[String(c)];
 // barevné značky (jen v telefonu porotce)
@@ -559,13 +617,24 @@ function render() {
   $("roundBar").classList.toggle("hidden", openRounds().length < 2);
   $("roundSel").innerHTML = list.filter(x => x.status === "open" || x.id === rid).map(x => `<option value="${x.id}" ${x.id === rid ? "selected" : ""}>${esc(titleOf(x))}${x.status !== "open" ? " (uzavřeno)" : ""}</option>`).join("");
   $("readyRow").classList.toggle("hidden", !(r && r.status === "open" && me.readyFor === r.id));
+  if (!sim && compGone) {
+    $("tabs").classList.add("hidden"); $("footer").classList.add("hidden"); $("roundBar").classList.add("hidden");
+    $("hRound").textContent = "Akce neexistuje";
+    $("content").innerHTML = `<div class="center"><h2>Akce už neexistuje</h2>Sčitatel tuto akci smazal. Vraťte se na úvod a vyberte jinou.
+      <button class="btn primary" id="goneHome">Zpět na úvod</button></div>`;
+    $("goneHome").onclick = leaveToHome;
+    return;
+  }
   if (!sim && kicked) { showKicked(); phaseTick(); return; }
   if (!sim && !holder) {
     phaseTick();
     $("tabs").classList.add("hidden"); $("footer").classList.add("hidden"); $("roundBar").classList.add("hidden");
-    $("content").innerHTML = `<div class="center"><h2>Převzato jiným zařízením</h2>Hodnocení porotce <b style="color:var(--text)">${judge}</b> teď probíhá na jiném telefonu nebo tabletu. Z tohoto zařízení nelze odesílat.
+    $("content").innerHTML = letterFree
+      ? `<div class="center"><h2>Písmeno ${judge} je volné</h2>Hodnocení porotce <b style="color:var(--text)">${judge}</b> teď nedrží žádné zařízení. Pokud máte hodnotit z tohoto telefonu, převezměte ho.
+      <button class="btn primary" id="takeBack">Hodnotit na tomto zařízení</button></div>`
+      : `<div class="center"><h2>Převzato jiným zařízením</h2>Hodnocení porotce <b style="color:var(--text)">${judge}</b> teď probíhá na jiném telefonu nebo tabletu. Z tohoto zařízení nelze odesílat.
       <button class="btn primary" id="takeBack">Převzít zpět sem</button></div>`;
-    $("takeBack").onclick = async () => { if (await askTakeover()) { await claimLetter(true); render(); } };
+    $("takeBack").onclick = async () => { if (letterFree || await askTakeover()) { await claimLetter(true); render(); } };
     return;
   }
   if (!r) {
@@ -576,7 +645,7 @@ function render() {
       ? `<div style="margin-top:18px;font-size:13px;line-height:1.6">Právě probíhá:<br>${others.map(x => `<b style="color:var(--text)">${esc(titleOf(x))}</b> – hodnotí ${(x.judges || []).join(", ")}`).join("<br>")}<br>Porotce ${judge} v tomto kole není. Pokud to nesedí, ozvěte se sčitateli.</div>`
       : `<div style="margin-top:18px;font-size:13px">Sčitatel zatím nespustil žádné kolo.</div>`;
     phaseTick();
-    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}<div class="credit" style="margin-top:40px">ArtimoCounter, created by Martin Hejhal, 2026, v5.0</div></div>`;
+    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}<div class="credit" style="margin-top:40px">ArtimoCounter, created by Martin Hejhal, 2026, v5.2</div></div>`;
     return;
   }
   $("hRound").textContent = titleOf(r);
@@ -598,23 +667,32 @@ function render() {
   }
 
   $("tabs").classList.remove("hidden"); $("footer").classList.remove("hidden");
+  // zamčený (odeslaný) tanec: nejde se k němu vrátit; zůstane vidět jen ten, který je právě otevřený
+  if (danceLocked(r, dance) && !locked) {
+    const free = r.dances.find(d => !danceLocked(r, d));
+    if (free && free !== dance && !justSent) { dance = free; selC = selP = null; }
+  }
   $("tabs").innerHTML = r.dances.map(d => {
-    const s = sheets.get(d), cls = !s ? "" : s.pending ? "wait" : acked(r, d) ? "ok" : "saved";
-    return `<button class="tab ${d === dance ? "sel" : ""}" data-d="${d}"><span class="dot ${cls}"></span>${DANCES[d]}</button>`;
+    const s = sheets.get(d), cls = !s ? "" : s.pending ? "wait" : acked(r, d) ? "ok" : "saved", lk = danceLocked(r, d) && d !== dance;
+    return `<button class="tab ${d === dance ? "sel" : ""} ${danceLocked(r, d) ? "lockd" : ""}" data-d="${d}" ${lk ? 'disabled aria-disabled="true"' : ""}><span class="dot ${cls}"></span>${DANCES[d]}${danceLocked(r, d) ? ` <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-label="zamčeno" role="img" style="vertical-align:-1px"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>` : ""}</button>`;
   }).join("");
 
-  const dr = draftFor(r, dance), s = sheets.get(dance);
+  const dl = !locked && danceLocked(r, dance);
+  let dr = draftFor(r, dance); const s = sheets.get(dance);
+  if (dl && dr.dirty) { drafts.delete(`${r.id}|${dance}`); dr = draftFor(r, dance); }   // zamčený tanec: platí jen odeslaná verze
   const banner = (sim ? `<div class="simbar"><b>Simulátor</b> nic se neodesílá<button class="btn" data-simexit="1">Ukončit</button></div>` : "")
-    + (locked ? `<div class="banner locked">Kolo je uzavřené sčitatelem – nelze odesílat ani měnit.</div>` : "");
-  if (r.type === "prelim") renderPrelim(r, dr, banner, locked, st); else renderFinal(r, dr, banner, locked, st);
+    + (locked ? `<div class="banner locked">Kolo je uzavřené sčitatelem – nelze odesílat ani měnit.</div>` : "")
+    + (dl ? `<div class="banner sentlock">${DANCES[dance]} je odeslaný a zamčený – nejde ho už měnit.${r.dances.every(d => danceLocked(r, d)) ? " Všechny tance jsou odeslané." : ""}</div>` : "");
+  const ro = locked || dl;
+  if (r.type === "prelim") renderPrelim(r, dr, banner, ro, st); else renderFinal(r, dr, banner, ro, st);
 
   $("counter").textContent = r.type === "prelim" ? `${dr.marks.size}/${r.required}` : `${Object.keys(dr.assign).length}/${r.couples.length}`;
   const cnt = r.type === "prelim" ? dr.marks.size : Object.keys(dr.assign).length, need = r.type === "prelim" ? r.required : r.couples.length;
   $("counter").style.color = cnt === need ? "#5fe08a" : cnt > need ? "#ff6b6f" : "";
   const same = sameAsSheet(r, dr, s?.data);
-  $("sendBtn").disabled = locked || !isValid(r, dr) || same;
-  $("sendBtn").textContent = s ? "Odeslat opravu" : "Odeslat";
-  $("clearBtn").disabled = locked;
+  $("sendBtn").disabled = ro || !isValid(r, dr) || same;
+  $("sendBtn").textContent = dl ? "Zamčeno" : s ? "Odeslat opravu" : lockSent() ? "Odeslat a zamknout" : "Odeslat";
+  $("clearBtn").disabled = ro;
   $("clearBtn").textContent = s && dr.dirty && !same ? "Vrátit" : "Smazat";
   let stt;
   if (!s) stt = `<span class="dot"></span>Neodesláno`;
@@ -625,14 +703,15 @@ function render() {
   $("status").innerHTML = `<span style="display:inline-flex;align-items:center;gap:7px">${stt}</span>`;
   $("qrBtn").classList.toggle("hidden", !st.qr);
   $("qrBtn").disabled = !qrPayload(r) && !qrBlocked(r);
-  phaseTick();
+  phaseTick(); saveDrafts();
 }
 
 function renderPrelim(r, dr, banner, locked, st) {
   const marks = st.colorMarks ? getMarks() : {};
   const groups = r.groups?.length ? r.groups : [{ n: 1, couples: r.couples }];
   // odstoupivší: nejde označit; neodeslaný křížek u něj se zruší
-  for (const c of [...dr.marks]) if (isWd(r, c) && !locked) { dr.marks.delete(c); dr.dirty = true; }
+  const sentMarks = sheets.get(dance)?.data?.marks || [];
+  for (const c of [...dr.marks]) if (isWd(r, c) && !locked && !sentMarks.includes(c)) { dr.marks.delete(c); dr.dirty = true; }
   const btn = c => isWd(r, c) ? `<button class="couple wd" disabled>${c}</button>` : `<button class="couple ${dr.marks.has(c) ? "on" : ""} ${marks[c] === "g" ? "mg" : marks[c] === "r" ? "mr" : ""}" data-c="${c}" ${locked ? "disabled" : ""}>${c}</button>`;
   $("content").innerHTML = banner +
     groups.map(g => `${groups.length > 1 ? `<div class="ghead"><span class="gc">${g.n}. skupina</span> ${g.couples.length}</div>` : ""}<div class="grid">${g.couples.map(btn).join("")}</div>`).join("");
@@ -657,7 +736,7 @@ function renderFinal(r, dr, banner, locked, st) {
   const medal = p => p >= 1 && p <= 3 ? `<span class="medal m${p}"></span>` : "";
   $("content").innerHTML = banner +
     `<div class="fin" id="fin">
-      <div class="fcol" style="grid-template-rows:repeat(${N},1fr)">${r.couples.map(c => `<button class="fbtn ${dr.assign[c] ? "linked" : ""} ${selC === c ? "sel" : ""}" data-fc="${c}" ${locked ? "disabled" : ""}>${medal(dr.assign[c])}${c}${dr.assign[c] ? `<span class="sm">${dr.assign[c]}.</span>` : ""}${isWd(r, c) ? `<span class="wdl">odstoupil</span>` : ""}</button>`).join("")}</div>
+      <div class="fcol" style="grid-template-rows:repeat(${N},1fr)">${r.couples.map(c => `<div class="fcell"><button class="fbtn ${dr.assign[c] ? "linked" : ""} ${selC === c ? "sel" : ""}" data-fc="${c}" ${locked ? "disabled" : ""} aria-label="Pár ${c}${dr.assign[c] ? `, ${dr.assign[c]}. místo` : ""}">${medal(dr.assign[c])}${c}${isWd(r, c) ? `<span class="wdl">odstoupil</span>` : ""}</button><span class="fpl" data-fl="${c}" aria-hidden="true">${dr.assign[c] ? dr.assign[c] + "." : ""}</span></div>`).join("")}</div>
       <div class="fcol" style="grid-template-rows:repeat(${N},1fr)">${Array.from({ length: N }, (_, i) => i + 1).map(p => `<button class="fbtn pl ${byPlace[p] ? "linked" : ""} ${selP === p ? "sel" : ""}" data-fp="${p}" ${locked ? "disabled" : ""}>${medal(p)}${p}.</button>`).join("")}</div>
       <svg id="lines"></svg></div>`;
   fitFinal(N);
@@ -679,8 +758,11 @@ function drawLines() {
     <stop offset="0" stop-color="#f5d3a8"/><stop offset="1" stop-color="#ffe9cc"/></linearGradient></defs>`;
   svg.innerHTML = defs + Object.entries(dr.assign).map(([c, p]) => {
     const a = fin.querySelector(`[data-fc="${c}"]`)?.getBoundingClientRect(), b = fin.querySelector(`[data-fp="${p}"]`)?.getBoundingClientRect();
+    const lab = fin.querySelector(`[data-fl="${c}"]`), lr = lab?.getBoundingClientRect();
     if (!a || !b) return "";
-    const x1 = a.right - box.left + 1, y1 = a.top + a.height / 2 - box.top, x2 = b.left - box.left - 1, y2 = b.top + b.height / 2 - box.top;
+    // čára začíná až s odsazením za číslem pořadí (měří se skutečná šířka textu)
+    let tx = a.right; if (lab && lab.firstChild) { const rg = document.createRange(); rg.selectNodeContents(lab); tx = rg.getBoundingClientRect().right; } else if (lr) tx = lr.left;
+    const x1 = tx - box.left + 10, y1 = a.top + a.height / 2 - box.top, x2 = b.left - box.left - 1, y2 = b.top + b.height / 2 - box.top;
     const k = (x2 - x1) * .5, d = `M${x1},${y1} C${x1 + k},${y1} ${x2 - k},${y2} ${x2},${y2}`;   // plynulá S-křivka
     const key = `${dance}:${c}-${p}`, nw = drawnLinks.has(key) ? "" : "new"; now.add(key);
     const hl = selC === +c ? "hl" : "", cl = `${hl} ${nw}`;
@@ -709,7 +791,7 @@ const endPtr = (e, cancel) => {
   const { b, c, x, y } = ptr; ptr = null; b.style.transform = "";
   if (cancel) return;
   const dx = e.clientX - x, dy = e.clientY - y, r = rounds.get(rid);
-  if (!r || r.type !== "prelim" || r.status !== "open") return;
+  if (!r || r.type !== "prelim" || r.status !== "open" || danceLocked(r, dance)) return;
   if (settings().colorMarks && Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy) * 1.3) {
     const m = getMarks(), col = dx > 0 ? "g" : "r";
     if (m[c] === col) delete m[c]; else m[c] = col;
@@ -728,7 +810,7 @@ function flash(b) { b.animate([{ transform: "translateX(-4px)" }, { transform: "
 
 // finále: pár → místo
 $("content").addEventListener("click", e => {
-  const r = rounds.get(rid); if (!r || r.type !== "final" || r.status !== "open") return;
+  const r = rounds.get(rid); if (!r || r.type !== "final" || r.status !== "open" || danceLocked(r, dance)) return;
   const fc = e.target.closest("[data-fc]"), fp = e.target.closest("[data-fp]");
   if (!fc && !fp) return;
   if (fc) { const c = +fc.dataset.fc; if (selP) { link(r, c, selP); return; } selC = selC === c ? null : c; render(); }
@@ -745,7 +827,7 @@ function link(r, c, p) {
 }
 
 $("clearBtn").onclick = () => {
-  const r = rounds.get(rid); if (!r) return;
+  const r = rounds.get(rid); if (!r || danceLocked(r, dance)) return;
   const dr = draftFor(r, dance), s = sheets.get(dance)?.data;
   if (s && dr.dirty && !sameAsSheet(r, dr, s)) { drafts.delete(`${r.id}|${dance}`); selC = selP = null; render(); return; }   // Vrátit k odeslané verzi
   if (r.type === "prelim") dr.marks.clear(); else dr.assign = {};
@@ -757,7 +839,7 @@ $("sendBtn").onclick = () => {
   if (sending) return;
   const r = rounds.get(rid); if (!r) return;
   const dr = draftFor(r, dance);
-  if (r.status !== "open" || !isValid(r, dr) || sameAsSheet(r, dr, sheets.get(dance)?.data)) return;
+  if (r.status !== "open" || danceLocked(r, dance) || !isValid(r, dr) || sameAsSheet(r, dr, sheets.get(dance)?.data)) return;
   sending = true; $("sendBtn").disabled = true; setTimeout(() => { sending = false; render(); }, 600);
   if (!sim && !holder) { toast("Nelze odeslat", "Hodnocení převzalo jiné zařízení."); return; }
   const prev = sheets.get(dance)?.data;
@@ -780,13 +862,15 @@ $("sendBtn").onclick = () => {
     .catch(e => {
       diagInc("fails"); diagEvent(`odmítnutý zápis (${e?.code || "chyba"})`);
       const cur = drafts.get(key);
-      if (!cur || !cur.dirty) { drafts.set(key, backup); toast("Lístek se neodeslal", `${errText(e)} Hodnocení zůstalo v telefonu – můžete ho poslat znovu nebo přes QR.`); }
+      if (e?.code === "permission-denied") { if (!cur || !cur.dirty) drafts.set(key, backup); toast("Kolo je už uzavřené", `Lístek ${DANCES[d0] || d0} se proto do databáze nezapsal. Pokud jste hodnocení předali sčitateli QR kódem, je u něj v pořádku. Jinak mu ukažte QR.`); }
+      else if (!cur || !cur.dirty) { drafts.set(key, backup); toast("Lístek se neodeslal", `${errText(e)} Hodnocení zůstalo v telefonu – můžete ho poslat znovu nebo přes QR.`); }
       else toast("Lístek se neodeslal", `${errText(e)} Vaše rozpracovaná oprava zůstala – dokončete ji a odešlete znovu.`);
       render();
     });
   }
   dr.dirty = false; navigator.vibrate?.(30);
-  if (settings().autoNext) {
+  if (lockSent()) { justSent = true; setTimeout(() => { justSent = false; render(); }, 380); }   // krátce ukázat odeslaný tanec, pak přejít dál
+  if (settings().autoNext || lockSent()) {
     const next = r.dances.find(d => d !== dance && !sheets.has(d));
     if (next) setTimeout(() => { dance = next; selC = selP = null; render(); }, 350);
   }
@@ -850,13 +934,14 @@ function midEvaluation() {
   return r.dances.some(d => { const dr = drafts.get(`${r.id}|${d}`), s = sheets.get(d); return !s || (dr && dr.dirty && !sameAsSheet(r, dr, s.data)); });
 }
 function leaveToHome() {
+  store.set("ac_j_resume", "");
   if (sim) { exitSim(); if (screen !== "home") location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : ""); return; }
   location.href = location.pathname + (linkComp ? `?c=${encodeURIComponent(linkComp)}` : "");
 }
 function goHome() {
   if (!midEvaluation()) { leaveToHome(); return; }
   $("overlay").innerHTML = `<div class="overlay"><div class="sheet"><h3>Odejít z hodnocení?</h3>
-    <p>${sim ? "Simulátor se ukončí." : "Kolo ještě nemáte celé odeslané. Odeslané tance zůstanou uložené, rozpracované se ztratí."}</p>
+    <p>${sim ? "Simulátor se ukončí." : "Kolo ještě nemáte celé odeslané. Odeslané tance zůstanou uložené, rozpracované najdete po návratu do akce."}</p>
     <div style="display:flex;gap:8px;margin-top:6px"><button class="btn" style="flex:1;height:46px" id="ghNo">Zůstat</button>
     <button class="btn primary" style="flex:1;height:46px" id="ghYes">Odejít</button></div></div></div>`;
   $("ghNo").onclick = () => $("overlay").innerHTML = "";
