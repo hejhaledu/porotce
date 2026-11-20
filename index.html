@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ArtimoCounter – Porotce – verze v5.2 – sestaveno 2026-11-16 – created by Martin Hejhal -->
+<!-- ArtimoCounter – Porotce – verze v5.3 – sestaveno 2026-11-19 – created by Martin Hejhal -->
 <html lang="cs">
 <head>
 <meta charset="utf-8">
@@ -132,6 +132,8 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
 .status{margin-top:8px;font-size:13px;display:flex;align-items:center;gap:7px;min-height:18px;color:var(--text2)}
 .status .sp{flex:1}
 .btn.qr{height:28px;padding:0 10px;font-size:12px;border-radius:8px}
+.alertbar{margin:8px 12px 0;padding:10px 12px;border-radius:12px;background:rgba(255,90,95,.16);border:1px solid rgba(255,90,95,.5);color:#ffc2c4;font-size:13.5px;line-height:1.35;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.alertbar span{flex:1 1 190px}.alertbar .btn{height:38px}
 .banner{margin:0 0 10px;padding:9px 12px;border-radius:11px;font-size:13px}
 .banner.locked{background:rgba(255,90,95,.14);color:#ff8a8d}
 .readyok{display:flex;align-items:center;gap:6px;font-size:12px;color:#5fe08a;margin-bottom:6px}
@@ -173,7 +175,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <button id="hGo" class="btn primary" style="width:100%;height:52px;margin-top:22px" disabled>Pokračovat</button>
   <label style="margin-top:30px">Simulátor – vyzkoušejte si hodnocení bez odesílání</label>
   <div class="simbtns"><button class="btn" data-sim="prelim">1. kolo</button><button class="btn" data-sim="final">Finále</button></div>
-  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v5.2</div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v5.3</div>
 </div>
 
 <div id="list" class="setup home hidden">
@@ -181,7 +183,16 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
   <div class="kicker" style="margin-top:18px">Porotce <span id="lJ"></span></div>
   <h1>Vaše akce</h1>
   <div id="compList"></div>
-  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v5.2</div>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v5.3</div>
+</div>
+
+<div id="paused" class="setup home hidden">
+  <img class="biglogo" src="data:image/png;base64,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" alt="Artimo">
+  <div class="kicker">Artimo Counter · porotce</div>
+  <h1>Otevřeno v jiné kartě</h1>
+  <div class="sub" style="line-height:1.5;margin-top:6px">Aplikace porotce smí běžet jen v jedné kartě prohlížeče, jinak by se lístky nemusely odeslat. Tato karta je proto pozastavená. Rozpracované hodnocení zůstává uložené.</div>
+  <button class="btn primary" id="pausedGo" style="width:100%;height:52px;margin-top:22px;font-size:16px">Používat tady</button>
+  <div class="credit">ArtimoCounter, created by Martin Hejhal, 2026, v5.3</div>
 </div>
 
 <div id="app" class="hidden">
@@ -193,6 +204,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
       <div class="srow ready hidden" id="readyRow"><span class="dot ok"></span>Připraven</div></div>
   </header>
   <div class="bar hidden" id="roundBar"><select class="in" id="roundSel" style="height:38px;font-size:14px"></select></div>
+  <div class="alertbar hidden" id="alertBar" role="alert"><span id="alertText"></span><button class="btn" id="alertQr">QR</button><button class="btn primary" id="alertReload">Obnovit aplikaci</button></div>
   <div class="tabs hidden" id="tabs"></div>
   <div class="content" id="content"></div>
   <footer id="footer" class="hidden">
@@ -211,7 +223,7 @@ footer{padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));ba
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache,
-         collection, doc, setDoc, getDoc, onSnapshot, query, where, serverTimestamp, writeBatch, increment }
+         collection, doc, setDoc, getDoc, onSnapshot, query, where, serverTimestamp, writeBatch, increment, disableNetwork, enableNetwork }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -226,7 +238,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 let db;
 let memCache = false;
-try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+// v5.3: pozastavená karta (aplikace běží v jiné kartě) se k databázi vůbec nepřipojuje
+const PAUSED = new URLSearchParams(location.search).has("paused");
+if (PAUSED) db = initializeFirestore(app, { localCache: memoryLocalCache() });
+else try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
 catch { memCache = true; bootError("Offline úložiště není dostupné, aplikace poběží bez něj."); db = initializeFirestore(app, { localCache: memoryLocalCache() }); }
 
 const DANCES = { W:"Waltz", T:"Tango", V:"Valčík", F:"Slowfox", Q:"Quickstep",
@@ -234,7 +249,7 @@ const DANCES = { W:"Waltz", T:"Tango", V:"Valčík", F:"Slowfox", Q:"Quickstep",
 const DEFAULTS = { requireReady: true, qr: true, colorMarks: true, autoNext: true };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-const APP_VER = "v5.2";
+const APP_VER = "v5.3";
 const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
 const pary = n => `${n} ${n === 1 ? "pár" : n >= 2 && n <= 4 ? "páry" : "párů"}`;
 const titleOf = r => r.category ? `${r.category} · ${r.label}` : (r.name || "");
@@ -246,7 +261,10 @@ function toast(title, msg = "") {
   const el = document.createElement("div"); el.className = "toast"; el.innerHTML = `<b>${esc(title)}</b>${esc(msg)}`;
   el.onclick = () => el.remove(); box.appendChild(el); setTimeout(() => el.remove(), 8000);
 }
-addEventListener("unhandledrejection", e => { if (document.getElementById("boot")?.style.display === "none") toast("Neočekávaná chyba", errText(e.reason)); });
+addEventListener("unhandledrejection", e => {
+  if (/INTERNAL ASSERTION FAILED|AsyncQueue is already failed|client has already been terminated/i.test(String(e.reason?.message || e.reason))) { setTimeout(() => setFatal(), 0); return; }
+  if (document.getElementById("boot")?.style.display === "none") toast("Neočekávaná chyba", errText(e.reason));
+});
 // Kolo z databáze se použije, jen když má všechny potřebné údaje (poškozený záznam aplikaci neshodí).
 const DANCE_CODES = ["W","T","V","F","Q","S","C","R","P","J","K"];
 const intArr = a => Array.isArray(a) && a.length > 0 && a.every(n => Number.isInteger(n) && n > 0);
@@ -289,6 +307,8 @@ function showScreen(name) {
   $("home").classList.toggle("hidden", name !== "home");
   $("list").classList.toggle("hidden", name !== "list");
   $("app").classList.toggle("hidden", name !== "app");
+  if ($("paused")) $("paused").classList.add("hidden");
+  alertSig = ""; if (name === "app") updateAlert(); else $("alertBar").classList.add("hidden");
 }
 function showHome() { showScreen("home"); renderHome(); }
 function renderHome() {
@@ -340,7 +360,7 @@ function bootApp() {
   onAuthStateChanged(auth, user => {
     if (!user || compsListening) return; compsListening = true;
     onSnapshot(collection(db, "competitions"), snap => {
-      comps = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }])); compsLoaded = true;
+      comps = new Map(snap.docs.filter(d => !d.data().deleting).map(d => [d.id, { id: d.id, ...d.data() }])); compsLoaded = true;
       // v5.2: po obnovení stránky (i uspání karty) se porotce vrátí rovnou do rozdělané akce
       if (!resumeTried && screen === "home" && !sim) {
         resumeTried = true;
@@ -400,9 +420,9 @@ function phaseText() {
   if (r.status !== "open") return `${titleOf(r)} · kolo uzavřeno`;
   if (settings().requireReady && me.readyFor !== r.id) return `${titleOf(r)} · nepotvrdil připravenost`;
   const sent = r.dances.filter(d => sheets.get(d)).length;
-  return `${titleOf(r)} · ${DANCES[dance] || ""} · odesláno ${sent}/${r.dances.length}${$("overlay").innerHTML.includes("qrwrap") ? " · ukazuje QR" : ""}`;
+  return `${titleOf(r)} · ${DANCES[dance] || ""} · odesláno ${sent}/${r.dances.length}${outbox.size ? ` · nedoručeno ${outbox.size}` : ""}${$("overlay").innerHTML.includes("qrwrap") ? " · ukazuje QR" : ""}`;
 }
-function devEntry() { return { at: serverTimestamp(), phase: phaseText(), model: deviceModel(), ver: APP_VER }; }
+function devEntry() { return { at: serverTimestamp(), phase: phaseText(), model: deviceModel(), ver: APP_VER, out: outbox.size }; }
 function phaseTick() {
   if (sim || !comp || !judge || compGone || $("app").classList.contains("hidden")) return;
   const ph = phaseText(); if (ph === lastPhase) return;
@@ -487,7 +507,7 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 
 let roundsSig = null, seenOpen = null;
 function listen() {
-  loadDrafts();
+  loadOut(); loadDrafts();
   diagReady(); beat(); setInterval(beat, 60000);
   let meSig = null;
   onSnapshot(judgeRef(), snap => {
@@ -503,7 +523,7 @@ function listen() {
     if (!sim) { me = liveMe; if (sig !== meSig) { meSig = sig; render(); } }
   }, err => toast("Stav porotce se nenačetl", errText(err)));
   onSnapshot(doc(db, "competitions", comp), snap => {
-    compGone = !snap.exists() && snap.metadata?.fromCache === false;       // smazaná akce: nic dalšího se do ní nezapisuje
+    compGone = (!snap.exists() && snap.metadata?.fromCache === false) || !!snap.data()?.deleting;     // smazaná / mazaná akce: nic dalšího se do ní nezapisuje
     compDoc = snap.data() || {};
     const name = compDoc.jury?.[judge];
     if (!sim) $("hSub").textContent = [name, compDoc.name || comp].filter(Boolean).join(" · ");
@@ -536,7 +556,21 @@ function selectRound(id) {
   if (sim) { render(); return; }
   unsubSheets = onSnapshot(query(collection(db, "competitions", comp, "rounds", id, "sheets"), where("judge", "==", judge)),
     { includeMetadataChanges: true },
-    snap => { if (sim) return; sheets = new Map(snap.docs.map(d => [d.data().dance, { data: d.data(), pending: d.metadata.hasPendingWrites }])); render(); },
+    snap => {
+      if (sim) return;
+      sheets = new Map(snap.docs.map(d => [d.data().dance, { data: d.data(), pending: d.metadata.hasPendingWrites }]));
+      if (rid === id) sheetsSeen = id;
+      for (const d of snap.docs) {                     // lístek potvrzený serverem → pryč z fronty nedoručených
+        if (d.metadata.hasPendingWrites) continue;
+        const x = d.data(), k = `${id}|${x.dance}`, o = outbox.get(k);
+        if (o && Number.isFinite(x.clientAt) && x.clientAt >= o.clientAt) {
+          outDone(k, x.clientAt);
+          const dr = drafts.get(k), rr = rounds.get(id);
+          if (dr && dr.dirty && rr && sameAsSheet(rr, dr, x)) dr.dirty = false;
+        }
+      }
+      render();
+    },
     err => toast("Lístky se nenačetly", errText(err)));
   render();
 }
@@ -568,6 +602,8 @@ function loadDrafts() {
         : { dirty: true, stored: true, assign: v.a && typeof v.a === "object" ? v.a : {} });
     }
   } catch {}
+  // v5.3: odeslané, ale serverem nepotvrzené lístky – po obnovení stránky se vrátí jako rozpracované, ať nezmizí
+  for (const [k, o] of outbox) if (!drafts.has(k) && o) drafts.set(k, Array.isArray(o.m) ? { dirty: true, stored: true, marks: new Set(o.m.filter(Number.isInteger)) } : { dirty: true, stored: true, assign: o.a && typeof o.a === "object" ? o.a : {} });
   draftsLoaded = true;
 }
 function draftFor(r, d) {
@@ -645,7 +681,7 @@ function render() {
       ? `<div style="margin-top:18px;font-size:13px;line-height:1.6">Právě probíhá:<br>${others.map(x => `<b style="color:var(--text)">${esc(titleOf(x))}</b> – hodnotí ${(x.judges || []).join(", ")}`).join("<br>")}<br>Porotce ${judge} v tomto kole není. Pokud to nesedí, ozvěte se sčitateli.</div>`
       : `<div style="margin-top:18px;font-size:13px">Sčitatel zatím nespustil žádné kolo.</div>`;
     phaseTick();
-    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}<div class="credit" style="margin-top:40px">ArtimoCounter, created by Martin Hejhal, 2026, v5.2</div></div>`;
+    $("content").innerHTML = `<div class="center">Zatím pro vás není otevřené žádné kolo.<br>Jakmile ho sčitatel spustí, objeví se tu samo.${info}<div class="credit" style="margin-top:40px">ArtimoCounter, created by Martin Hejhal, 2026, v5.3</div></div>`;
     return;
   }
   $("hRound").textContent = titleOf(r);
@@ -673,7 +709,7 @@ function render() {
     if (free && free !== dance && !justSent) { dance = free; selC = selP = null; }
   }
   $("tabs").innerHTML = r.dances.map(d => {
-    const s = sheets.get(d), cls = !s ? "" : s.pending ? "wait" : acked(r, d) ? "ok" : "saved", lk = danceLocked(r, d) && d !== dance;
+    const s = sheets.get(d), cls = outStuck(d) ? "bad" : !s ? "" : s.pending ? "wait" : acked(r, d) ? "ok" : "saved", lk = danceLocked(r, d) && d !== dance;
     return `<button class="tab ${d === dance ? "sel" : ""} ${danceLocked(r, d) ? "lockd" : ""}" data-d="${d}" ${lk ? 'disabled aria-disabled="true"' : ""}><span class="dot ${cls}"></span>${DANCES[d]}${danceLocked(r, d) ? ` <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-label="zamčeno" role="img" style="vertical-align:-1px"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>` : ""}</button>`;
   }).join("");
 
@@ -697,6 +733,7 @@ function render() {
   let stt;
   if (!s) stt = `<span class="dot"></span>Neodesláno`;
   else if (!same) stt = `<span class="dot wait"></span>Neodeslané změny`;
+  else if (outStuck(dance)) stt = `<span class="dot bad"></span>Nedaří se doručit – obnovte aplikaci`;
   else if (s.pending) stt = `<span class="dot wait"></span>V telefonu, čeká na signál`;
   else if (acked(r, dance)) stt = `<span class="dot ok"></span>Převzato sčitatelem ✓${s.data.rev > 1 ? ` (v${s.data.rev})` : ""}`;
   else stt = `<span class="dot saved"></span>Uloženo na serveru · čeká na sčitatele`;
@@ -858,8 +895,10 @@ $("sendBtn").onclick = () => {
     b.set(doc(collection(db, "competitions", comp, "log")), { at: serverTimestamp(), ts: data.clientAt, who: `porotce ${judge}`, action: "odeslání lístku",
       round: rid, dance: d0, judge, deviceId, ...(r.type === "prelim" ? { marks: data.marks } : { placings: data.placings }) });
     const t0 = Date.now(); diagInc("sends");
-    b.commit().then(() => { const dt = Date.now() - t0; diagReady(); diag.delivered = (diag.delivered || 0) + 1; diag.deliverSum = (diag.deliverSum || 0) + dt; diag.deliverMax = Math.max(diag.deliverMax || 0, dt); diagSave(); if (dt > 10000) diagEvent(`lístek ${DANCES[d0] || d0} doručen až po ${Math.round(dt / 1000)} s`); })
+    outbox.set(key, { rid: r.id, d: d0, clientAt: data.clientAt, t0, ...(r.type === "prelim" ? { m: data.marks } : { a: { ...dr.assign } }) }); saveOut();
+    b.commit().then(() => { outDone(key, data.clientAt); const dt = Date.now() - t0; diagReady(); diag.delivered = (diag.delivered || 0) + 1; diag.deliverSum = (diag.deliverSum || 0) + dt; diag.deliverMax = Math.max(diag.deliverMax || 0, dt); diagSave(); if (dt > 10000) diagEvent(`lístek ${DANCES[d0] || d0} doručen až po ${Math.round(dt / 1000)} s`); })
     .catch(e => {
+      outDone(key, data.clientAt);
       diagInc("fails"); diagEvent(`odmítnutý zápis (${e?.code || "chyba"})`);
       const cur = drafts.get(key);
       if (e?.code === "permission-denied") { if (!cur || !cur.dirty) drafts.set(key, backup); toast("Kolo je už uzavřené", `Lístek ${DANCES[d0] || d0} se proto do databáze nezapsal. Pokud jste hodnocení předali sčitateli QR kódem, je u něj v pořádku. Jinak mu ukažte QR.`); }
@@ -870,11 +909,79 @@ $("sendBtn").onclick = () => {
   }
   dr.dirty = false; navigator.vibrate?.(30);
   if (lockSent()) { justSent = true; setTimeout(() => { justSent = false; render(); }, 380); }   // krátce ukázat odeslaný tanec, pak přejít dál
-  if (settings().autoNext || lockSent()) {
+  // Na další tanec až ve chvíli, kdy je lístek zapsaný aspoň v telefonu. Když se nezapíše ani tam,
+  // databázová knihovna se zasekla – hodnocení zůstane, porotce dostane výzvu k obnovení.
+  const advance = () => {
+    if (!(settings().autoNext || lockSent()) || dance !== d0 || rid !== r.id) return;
     const next = r.dances.find(d => d !== dance && !sheets.has(d));
-    if (next) setTimeout(() => { dance = next; selC = selP = null; render(); }, 350);
-  }
+    if (next) { dance = next; selC = selP = null; render(); }
+  };
+  if (sim) { setTimeout(advance, 350); return; }
+  let tries = 0;
+  const check = () => {
+    if (rid !== r.id) return;
+    const x = sheets.get(d0)?.data;
+    if (x && x.clientAt === data.clientAt) { setTimeout(advance, 200); return; }
+    if (outbox.get(key)?.clientAt !== data.clientAt) return;          // zápis mezitím odmítnut nebo nahrazen novějším – řeší se jinde
+    if (++tries < 20) { setTimeout(check, 150); return; }
+    clientBroken = true; diagEvent(`lístek ${DANCES[d0] || d0} se nezapsal ani v telefonu`);
+    const cur = drafts.get(key); if (!cur || !cur.dirty) drafts.set(key, backup);
+    updateAlert(); render();
+  };
+  setTimeout(check, 150);
 };
+
+// ===================== v5.3: KONTROLA DORUČENÍ =====================
+// Každý odeslaný lístek čeká ve frontě (i v úložišti telefonu), dokud ho nepotvrdí server.
+// Nedoručený po 10 s → restart spojení; po 25 s → výrazné upozornění s tlačítkem Obnovit a QR.
+const outKey = () => `ac_out_${comp}_${judge}`;
+let outbox = new Map(), outLoaded = false, sheetsSeen = null, netRestartAt = 0, clientBroken = false, fatalErr = false, alertSig = "";
+function saveOut() { if (sim || !comp || !judge || !outLoaded) return; store.set(outKey(), JSON.stringify(Object.fromEntries(outbox))); }
+function loadOut() {
+  try { const o = JSON.parse(store.get(outKey()) || "{}") || {}; outbox = new Map(Object.entries(o).filter(([, v]) => v && Number.isFinite(v.clientAt))); } catch { outbox = new Map(); }
+  outLoaded = true;
+}
+function outDone(key, clientAt) { const o = outbox.get(key); if (o && (clientAt == null || clientAt >= o.clientAt)) { outbox.delete(key); saveOut(); updateAlert(); } }
+const stuckFor = o => Date.now() - (o.t0 || 0);
+function outStuck(d) { const o = outbox.get(`${rid}|${d}`); return !!o && online && stuckFor(o) > 25000; }
+function watchdog() {
+  if (sim || PAUSED || !outLoaded) return;
+  for (const [k, o] of [...outbox]) {
+    const rr = liveRounds.get(o.rid);
+    if (liveRounds.size && (!rr || rr.status !== "open")) { outbox.delete(k); saveOut(); continue; }     // kolo skončilo – fronta už nic nezmění
+    // po obnovení stránky: na serveru ani v telefonu nic není → lístek se ztratil, zůstane jako neodeslaný koncept
+    if (o.rid === rid && sheetsSeen === rid) { const x = sheets.get(o.d); if (!x || (!x.pending && (x.data.clientAt || 0) < o.clientAt)) { if (stuckFor(o) > 4000) { outbox.delete(k); saveOut(); const dr = drafts.get(k); if (dr) dr.dirty = true; toast("Lístek se neodeslal", `${DANCES[o.d] || o.d}: hodnocení zůstalo v telefonu – odešlete ho znovu.`); render(); } } }
+  }
+  const oldest = Math.max(0, ...[...outbox.values()].map(stuckFor));
+  if (online && oldest > 10000 && Date.now() - netRestartAt > 30000) {
+    netRestartAt = Date.now(); diagEvent("lístek nedoručen 10 s – restart spojení");
+    disableNetwork(db).then(() => enableNetwork(db)).catch(() => {});
+  }
+  updateAlert();
+}
+function updateAlert() {
+  if (sim || PAUSED) return;
+  const stuck = [...outbox.values()].filter(o => online && stuckFor(o) > 25000);
+  let text = "";
+  if (fatalErr || clientBroken) text = "Aplikace přestala komunikovat s databází. Obnovte ji – hodnocení zůstane uložené v telefonu.";
+  else if (stuck.length) text = `${stuck.length === 1 ? `Lístek ${DANCES[stuck[0].d] || stuck[0].d} se nedaří doručit` : `${stuck.length} lístky se nedaří doručit`} sčitateli. Obnovte aplikaci, nebo ukažte sčitateli QR.`;
+  const sig = text + "|" + stuck.map(o => o.rid + o.d).join(",");
+  if (sig === alertSig) return;
+  alertSig = sig;
+  $("alertText").textContent = text;
+  $("alertBar").classList.toggle("hidden", !text || $("app").classList.contains("hidden"));
+  if ($("app") && !$("app").classList.contains("hidden")) render();
+  phaseTick();
+}
+$("alertReload").onclick = () => { saveDrafts(); saveOut(); location.reload(); };
+$("alertQr").onclick = () => $("qrBtn").click();
+setInterval(watchdog, 2000);
+// vnitřní chyba knihovny Firebase: dál by se hodnotilo „naslepo“ → výzva k obnovení
+function setFatal() { if (fatalErr || sim || PAUSED) return; fatalErr = true; try { diagEvent("vnitřní chyba databáze"); } catch {} alertSig = ""; updateAlert(); }
+const FATAL_RE = /INTERNAL ASSERTION FAILED|AsyncQueue is already failed|client has already been terminated/i;
+{ const orig = console.error.bind(console);
+  console.error = (...a) => { try { if (FATAL_RE.test(a.map(x => String(x?.message || x)).join(" "))) setFatal(); } catch {} orig(...a); }; }
+addEventListener("error", e => { if (FATAL_RE.test(e.message || "")) setFatal(); });
 
 // ===================== QR OFFLINE =====================
 // AC2;c=<akce>;r=<kolo>;j=<porotce>;t=p|f;ts=<ms>;v=S2.C1;S=1.4.7;C=...  (v = revize lístků na serveru, ze kterých telefon vychází)
@@ -983,7 +1090,25 @@ document.addEventListener("click", e => {
 });
 
 // ===================== START =====================
-bootApp();
+// v5.3: aplikace porotce jen v jedné kartě – sdílené spojení s databází by jinak mohlo odesílat jen z karty na pozadí.
+const TAB_ID = Math.random().toString(36).slice(2);
+function pauseThisTab() {
+  try { saveDrafts(); saveOut(); } catch {}
+  location.replace(location.pathname + "?paused=1" + (linkComp ? "&c=" + encodeURIComponent(linkComp) : ""));
+}
+if (PAUSED) {
+  $("boot").style.display = "none"; $("paused").classList.remove("hidden");
+  $("pausedGo").onclick = () => location.replace(location.pathname + (linkComp ? "?c=" + encodeURIComponent(linkComp) : ""));
+} else {
+  try {
+    if (db && "BroadcastChannel" in window) {
+      const ch = new BroadcastChannel("ac_porotce_tab");
+      ch.onmessage = e => { if (e.data?.t === "claim" && e.data.id !== TAB_ID) pauseThisTab(); };
+      ch.postMessage({ t: "claim", id: TAB_ID });
+    }
+  } catch {}
+  bootApp();
+}
 </script>
 </body>
 </html>
